@@ -13,6 +13,19 @@ This repository provides an implementation for solving the Sports Tournament Sch
 - Provides optimization strategies to improve schedule quality (e.g., minimizing breaks, balancing home/away games).
 
 - Modular design to allow students and researchers to experiment with different algorithms (constraint programming, local search, metaheuristics, SAT/SMT solvers, etc.).
+  
+- Interactive command-line menu for easy execution and testing of different models and parameters.
+  
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="notes/Menu_example.png" width="100%">
+    </td>
+    <td align="center" width="50%">
+      <img src="notes/Multi_execution_example.png" width="100%">
+    </td>
+  </tr>
+</table>
 
 ## Technologies & Methods
 
@@ -27,6 +40,7 @@ This repository provides an implementation for solving the Sports Tournament Sch
   - MIP (Mixed-Integer Programming) for optimization under linear constraints. 
 
   - CP (Constraint Programming) for flexible scheduling constraints.  (**MINIZINC**)
+
 
 
 ## Use Cases

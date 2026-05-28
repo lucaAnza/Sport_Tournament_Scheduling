@@ -63,6 +63,7 @@ def exactly_one_heule(bool_vars, name = 'A'):
 
 
 ################################# DOMAIN DEFINITION ###############################
+print("-------------------------------------------------------------------------------------------------")
 start1 = time.perf_counter()
 init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
 init_progress.start()
@@ -80,10 +81,6 @@ for t in range(0,team):
                 else:
                     #vars[t,h,p,w] = Bool(f"T{t+1}-P{p+1}-W{w+1}(HOME)") # an other possible notation
                     vars[t,h,p,w] = Bool(f"X{t+1}{h}{p+1}{w+1}") 
-
-print("-------------------------------------------------------------------------------------------------")
-
-
 model = Optimize()  # Use Solver() if you don't use optimization function
 
 ################################# DOMAIN DEFINITION ###############################

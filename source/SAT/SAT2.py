@@ -78,6 +78,7 @@ def exactly_one_heule(bool_vars, name = 'A'):
 
 
 # ============================== MODEL VARS =================================
+print("-------------------------------------------------------------------------------------------------")
 start1 = time.perf_counter()
 init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
 init_progress.start()
@@ -160,7 +161,7 @@ if precomputing_version:
                     model.add(Not(M[t1][t2][w]))
     pre2 = time.perf_counter()
     precomputing_time = pre2-pre1
-    print(f"Precomputing time :  ({precomputing_time:.2f}s)")
+    print(f"\nPrecomputing time :  ({precomputing_time:.2f}s)")
 
 exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 start2 = time.perf_counter()

@@ -12,7 +12,7 @@ script_path = ''                   # Name if this script is executed for debuggi
 docker_path = '/app/outputs/SAT/'  # Name if this script is executed from docker script
 SEED_FOR_REPRODUTION = 0       # set to 0 for default; >0 for reproduce an attempt
 team , weeks , periods , home , default_filename , optimized_version , precomputing_version = get_user_settings(sys.argv , docker_path , script_path)
-timeout = 10000 # milliseconds
+timeout = 300000 # milliseconds
 ################################# PARAMETERS ###############################
 
 
