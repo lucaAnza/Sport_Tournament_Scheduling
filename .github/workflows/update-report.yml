@@ -35,6 +35,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Check the actual branch (needed for PRs)
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Install LaTeX
         run: |
