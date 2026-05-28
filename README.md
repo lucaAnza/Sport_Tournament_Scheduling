@@ -38,6 +38,7 @@ This repository provides an implementation for solving the Sports Tournament Sch
 - Teaching material for courses on optimization, scheduling, and operations research.
 
 ## Getting Started (Linux 🐧)
+<img src="https://img.shields.io/badge/Linux-111827?style=for-the-badge&logo=linux&logoColor=FCC624" />
 
 1. Start the Docker engine.
 2. Move to `.../SportsTournamentScheduling-STS`
@@ -54,6 +55,7 @@ This repository provides an implementation for solving the Sports Tournament Sch
    * To reset, simply delete `solutions.json` file.
 
 ## Getting Started (Windows)
+<img src="https://img.shields.io/badge/Windows-2563EB?style=for-the-badge&logo=windows11&logoColor=white" />
 
 1. Start the Docker engine.
 2. Move to `.../SportsTournamentScheduling-STS`

@@ -197,7 +197,7 @@ class SAT1(ContextSolver):
         new_entry = {}
         new_entry['time'] = time
         new_entry['optimal'] = optimal
-        new_entry['obj'] = int(self.obj) if self.opt_enabled else None
+        new_entry['obj'] = int(self.obj) if self.opt_enabled else "None"
         new_entry['sol'] = sol_list
         self.data[solution_name] = new_entry
 
@@ -321,7 +321,7 @@ class SAT2(ContextSolver):
         new_entry = {
             'time': time,
             'optimal': optimal,
-            'obj': int(self.obj) if self.opt_enabled else None,
+            'obj': int(self.obj) if self.opt_enabled else "None",
             'sol': sol_list
         }
         self.data[solution_name] = new_entry
