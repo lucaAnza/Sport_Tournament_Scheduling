@@ -139,6 +139,10 @@ class ContextSolver():
 
         return max(0, self.timeout - elapsed_ms)
 
+    def total_time_seconds(self):
+        total_time = self.init_time + max(0, self.solve_time)
+        return int(min(total_time, self.timeout / 1000))
+
     def check_with_remaining_timeout(self):
         remaining = self.remaining_timeout_ms()
         if remaining <= 0:
@@ -255,7 +259,7 @@ class ContextSolver():
 
     def empty_result_entry(self, timed_out=False):
         return {
-            'time': self.timeout // 1000 if timed_out else int(self.solve_time),
+            'time': self.timeout // 1000 if timed_out else self.total_time_seconds(),
             'optimal': not timed_out,
             'obj': "None",
             'sol': []
@@ -337,7 +341,7 @@ class SAT1(ContextSolver):
             sol_list.append(period_list)
         
         optimal = (not self.opt_enabled) or self.proved_optimal
-        time = int(self.solve_time)
+        time = self.total_time_seconds()
         if not optimal: 
             time = self.timeout // 1000
 
@@ -465,7 +469,7 @@ class SAT2(ContextSolver):
             for p, (h, a) in enumerate(packed[w]):
                 sol_list[p][w] = [h + 1, a + 1]  # 1-based
         optimal = (not self.opt_enabled) or self.proved_optimal
-        time = int(self.solve_time)
+        time = self.total_time_seconds()
         if not optimal:
             time = self.timeout // 1000
         new_entry = {

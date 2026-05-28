@@ -13,6 +13,7 @@ docker_path = '/app/outputs/SAT/'  # Name if this script is executed from docker
 SEED_FOR_REPRODUTION = 0       # set to 0 for default; >0 for reproduce an attempt
 team , weeks , periods , home , default_filename , optimized_version , precomputing_version = get_user_settings(sys.argv , docker_path , script_path)
 timeout = 300000 # milliseconds
+SOLUTION_NAME = 'SAT1-bitwise'
 ################################# PARAMETERS ###############################
 
 
@@ -69,7 +70,7 @@ print("-------------------------------------------------------------------------
 start1 = time.perf_counter()
 init_progress = ProgressPrinter("model init running", timeout // 1000, start1)   # Define thread for timeout during model initialization (in seconds)
 init_progress.start()
-timeout_solution_name = solution_name_with_settings('SAT1-bitwise', optimized_version)
+timeout_solution_name = solution_name_with_settings(SOLUTION_NAME, optimized_version)
 # Define the variable
 vars = np.empty((team , home , periods , weeks) , dtype=object)
 for t in range(0,team):
@@ -174,15 +175,15 @@ result_code = bitwise_model.solve()
 if( result_code == 0 ) : # SAT
     print(f"SAT1-BITWISE : The model is satisfiable (SAT) ✅ - exits at least one solution! (🕒: {init_time:.2f} + {bitwise_model.solve_time:.2f} = {(init_time+bitwise_model.solve_time):.2f}s)")
     print(bitwise_model.obj)
-    bitwise_model.add_solution_json(solution_name=f'SAT1-bitwise')
+    bitwise_model.add_solution_json(solution_name=f'{SOLUTION_NAME}')
     bitwise_model.export_json_solution()
 elif( result_code == 1 ) : # UNSAT
     print("The model is unsatisfiable (UNSAT) ❌  - doesn't exits solution at all")
-    bitwise_model.add_empty_solution_json(solution_name=f'SAT1-bitwise')
+    bitwise_model.add_empty_solution_json(solution_name=f'{SOLUTION_NAME}')
     bitwise_model.export_json_solution()
 else: # UNKNOWN
     print("The solver returned UNKNOWN (timeout reached) ⚠️")
-    bitwise_model.add_empty_solution_json(solution_name=f'SAT1-bitwise', timed_out=True)
+    bitwise_model.add_empty_solution_json(solution_name=f'{SOLUTION_NAME}', timed_out=True)
     bitwise_model.export_json_solution()
 print("-------------------------------------------------------------------------------------------------")
 

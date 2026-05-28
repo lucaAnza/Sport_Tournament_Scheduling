@@ -14,6 +14,7 @@ docker_path = '/app/outputs/SAT/'  # Name if this script is executed from docker
 SEED_FOR_REPRODUTION = 0       # set to 0 for default; >0 for reproduce an attempt
 team , weeks , periods , home , default_filename , optimized_version , precomputing_version = get_user_settings(sys.argv , docker_path , script_path)
 timeout = 300000 # milliseconds
+SOLUTION_NAME = 'SAT2'
 ################################# PARAMETERS ###############################
 
 # Z3 params
@@ -82,7 +83,7 @@ print("-------------------------------------------------------------------------
 start1 = time.perf_counter()
 init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
 init_progress.start()
-timeout_solution_name = solution_name_with_settings('SAT2', optimized_version, precomputing_version)
+timeout_solution_name = solution_name_with_settings(SOLUTION_NAME, optimized_version, precomputing_version)
 M = [[[Bool(f"M_{t1}_{t2}_w{w}") for w in range(weeks)] for t2 in range(team)] for t1 in range(team)] # t1,t2 plays in week w
 P = [[[Bool(f"P_t{t}_p{p}_w{w}") for w in range(weeks)] for p in range(periods)] for t in range(team)] # team t is assigned to period p in week w
 HOME = [[Bool(f"HOME_{t}_w{w}") for w in range(weeks)] for t in range(team)] # team t is home in week w
@@ -178,17 +179,17 @@ result_code = sequential_model.solve()
 if( result_code == 0) : # SAT  
     print(f"SAT2 : The model is satisfiable (SAT) ✅ - exits at least one solution! (🕒: {init_time:.2f} + {sequential_model.solve_time:.2f} = {(init_time+sequential_model.solve_time):.2f}s)")
     print("obj : " , sequential_model.obj)
-    sequential_model.add_solution_json(solution_name=f'SAT2')
+    sequential_model.add_solution_json(solution_name=f'{SOLUTION_NAME}')
     sequential_model.export_json_solution()
     """for d in sequential_model.model.decls():
         print(f"{d.name()} = {sequential_model.model[d]}")"""
 elif(result_code == 1): # UNSAT
     print("The model is unsatisfiable (UNSAT) ❌  - doesn't exits solution at all")
-    sequential_model.add_empty_solution_json(solution_name=f'SAT2')
+    sequential_model.add_empty_solution_json(solution_name=f'{SOLUTION_NAME}')
     sequential_model.export_json_solution()
 else: # UNKNOWN
     print("The solver returned UNKNOWN (timeout reached) ⚠️")
-    sequential_model.add_empty_solution_json(solution_name=f'SAT2', timed_out=True)
+    sequential_model.add_empty_solution_json(solution_name=f'{SOLUTION_NAME}', timed_out=True)
     sequential_model.export_json_solution()
 print("-------------------------------------------------------------------------------------------------")
 ################################# MAIN ###############################
