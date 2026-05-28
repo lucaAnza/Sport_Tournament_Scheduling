@@ -3,12 +3,109 @@ import sys
 import json
 from z3 import *
 import time
+import threading
+import os
 from abc import abstractmethod
 import argparse
 from itertools import combinations
 
 
 ################################# WRAP CLASS #########################################
+class ProgressPrinter:
+    def __init__(self, label, total_seconds=None, start_time=None , offset = None):
+        self.label = label
+        self.total_seconds = total_seconds
+        self.start_time = start_time
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.last_message_len = 0
+        self.offset = offset
+
+    def start(self):
+        self.stop_event.clear()
+        if self.start_time is None:
+            self.start_time = time.perf_counter()
+        self.thread = threading.Thread(target=self._print_progress, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        if self.thread is None:
+            return
+        self.stop_event.set()
+        self.thread.join()
+        self.thread = None
+        sys.stdout.write("\r" + " " * self.last_message_len + "\r")
+        sys.stdout.flush()
+
+    # the function that runs in the thread
+    def _print_progress(self): 
+        while not self.stop_event.is_set():
+            if self.offset is not None:
+                elapsed = int(time.perf_counter() - self.start_time + self.offset)
+            else:
+                elapsed = int(time.perf_counter() - self.start_time)
+            if self.total_seconds is None:
+                message = f"{self.label} {elapsed}s"
+            else:
+                message = f"{self.label} {min(elapsed, self.total_seconds)}s/{self.total_seconds}s"
+            self.last_message_len = max(self.last_message_len, len(message))
+            sys.stdout.write("\r" + message)
+            sys.stdout.flush()
+            self.stop_event.wait(1)
+
+
+
+################################# SAT initialization HELPERS #########################################
+def solution_name_with_settings(solution_name, opt_enabled=False, precomputing_enabled=False):
+    if opt_enabled:
+        solution_name = solution_name + '(OPT-version)'
+    if precomputing_enabled:
+        solution_name = solution_name + '(PRECOMPUTING)'
+    return solution_name
+
+
+def import_json_solution_file(filename):
+    try:
+        with open(filename, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"File {filename} not found. Returning empty dictionary.")
+        return {}
+    except Exception:
+        print(f"Error during file reading. Returning empty dictionary.")
+        return {}
+
+
+def export_json_solution_file(data, filename):
+    dirpath = os.path.dirname(filename)
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
+        f.write("\n")
+    print(f"Successfully exported the json solution  ('{filename}')")
+
+
+def exit_if_init_timeout(start_time, timeout_ms, solution_filename, solution_name, progress_printer=None):
+    elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+    if elapsed_ms < timeout_ms:
+        return
+
+    if progress_printer is not None:
+        progress_printer.stop()
+
+    data = import_json_solution_file(solution_filename)
+    data[solution_name] = {
+        'time': timeout_ms // 1000,
+        'optimal': False,
+        'obj': "None",
+        'sol': []
+    }
+    print(f"Model initialization reached timeout ({timeout_ms // 1000}s)")
+    export_json_solution_file(data, solution_filename)
+    raise SystemExit(0)
+
+
 class ContextSolver():
     
     def __init__(self , z3_solver , team , solution_filename , init_time , opt_enabled , timeout):
@@ -31,13 +128,15 @@ class ContextSolver():
         self.data = self.import_json_solution()
         self.timeout = timeout
         self.solve_start = None
+        self.progress_printer = None
         print("solver timeout is set to : " , self.timeout , "milliseconds" , f"({self.timeout//1000} seconds)")
         self.solver.set(timeout=self.remaining_timeout_ms())
 
     def remaining_timeout_ms(self):
         elapsed_ms = int(self.init_time * 1000)
         if self.solve_start is not None:
-            elapsed_ms += int((time.perf_counter() - self.solve_start) * 1000)
+            elapsed_ms = elapsed_ms + int((time.perf_counter() - self.solve_start) * 1000) # init_time + solve_time
+
         return max(0, self.timeout - elapsed_ms)
 
     def check_with_remaining_timeout(self):
@@ -47,13 +146,58 @@ class ContextSolver():
         self.solver.set(timeout=remaining)
         return self.solver.check()
 
+    # Used in the optimization phase, cause we add a lot of constraints (Timeout fixed)
+    def add_at_most_k_with_remaining_timeout(self, bool_vars, k, chunk_size=500):
+        if k >= len(bool_vars):
+            return True
+        pending = []
+        for combo in combinations(bool_vars, k + 1):
+            if self.remaining_timeout_ms() <= 0:
+                return False
+            pending.append(Or([Not(x) for x in combo]))
+            if len(pending) >= chunk_size:
+                self.solver.add(pending)
+                pending = []
+        if pending:
+            self.solver.add(pending)
+        return True
+    
+    # Used in the optimization phase, cause we add a lot of constraints (Timeout fixed)
+    def add_at_least_k_with_remaining_timeout(self, bool_vars, k, chunk_size=500):
+        if k <= 0:
+            return True
+        if k > len(bool_vars):
+            return False
+        max_false = len(bool_vars) - k
+        pending = []
+        for combo in combinations(bool_vars, max_false + 1):
+            if self.remaining_timeout_ms() <= 0:
+                return False
+            pending.append(Or(list(combo)))
+            if len(pending) >= chunk_size:
+                self.solver.add(pending)
+                pending = []
+        if pending:
+            self.solver.add(pending)
+        return True
+
+    def start_progress_printer(self):
+        timeout_seconds = self.timeout // 1000
+        self.progress_printer = ProgressPrinter("process running", timeout_seconds, self.solve_start , offset=self.init_time)
+        self.progress_printer.start()
+
+    def stop_progress_printer(self):
+        if self.progress_printer is None:
+            return
+        self.progress_printer.stop()
+        self.progress_printer = None
+
     def import_json_solution(self):
         try:
             with open(self.solution_filename, "r") as f:
                 data = json.load(f)
             return data
         except FileNotFoundError:
-            print(f"File {self.solution_filename} not found. Returning empty dictionary.")
             return {} 
         except Exception:
             print(f"Error during file reading. Returning empty dictionary.") 
@@ -61,7 +205,6 @@ class ContextSolver():
         
     def export_json_solution(self , indent=4, compact_keys=("sol",)):
     
-        """Pretty-print JSON, but keep inner lists in `compact_keys` compact (like [1,2])"""
         def write(obj, f, level=0, parent_key=None):
             pad = " " * (level * indent)
 
@@ -120,22 +263,26 @@ class ContextSolver():
 
     def solve(self):
         start = time.perf_counter() # -----------------------------------------------------------------------------TIME(START)
-        self.solve_start = start
-        find_one_at_least_one_solution = False
-        sat_result = self.check_with_remaining_timeout()   # Start the SAT search and fill the variable model with the solution (ModelRef)
-        if(sat_result == z3.sat): 
-            find_one_at_least_one_solution = True
-            self.model = self.solver.model()
-            self.obj = self.compute_obj_function()
-            # Optimality research
-            if(self.opt_enabled):
-                self.solve_opt()
-        elif(sat_result == z3.unknown):
-            self.solve_time = min(time.perf_counter() - start, max(0, self.timeout / 1000 - self.init_time))
-            return 2 # UNKNOWN (timeout or other solver failure)
+        self.solve_start = start 
+        self.start_progress_printer()
+        try:
+            find_one_at_least_one_solution = False
+            sat_result = self.check_with_remaining_timeout()   # Start the SAT search and fill the variable model with the solution (ModelRef)
+            if(sat_result == z3.sat): 
+                find_one_at_least_one_solution = True
+                self.model = self.solver.model()
+                self.obj = self.compute_obj_function()
+                # Optimality research (in this phase you have already found one solution)
+                if(self.opt_enabled):
+                    self.solve_opt()
+            elif(sat_result == z3.unknown):
+                self.solve_time = min(time.perf_counter() - start, max(0, self.timeout / 1000 - self.init_time))
+                return 2 # UNKNOWN (timeout or other solver failure)
 
-        end = time.perf_counter()  # ------------------------------------------------------------------------------- TIME(END)
-        self.solve_time = min(end - start, max(0, self.timeout / 1000 - self.init_time))
+            end = time.perf_counter()  # ------------------------------------------------------------------------------- TIME(END)
+            self.solve_time = min(end - start, max(0, self.timeout / 1000 - self.init_time))
+        finally:
+            self.stop_progress_printer()
         if(find_one_at_least_one_solution):
             return 0
         else:
@@ -217,7 +364,10 @@ class SAT1(ContextSolver):
                     if self.remaining_timeout_ms() <= 0:
                         sat_result = unknown
                         break
-                    self.solver.add(at_most_k(list(self.vars[t,h,:,:].flatten()) , upper_bound))  
+                    added = self.add_at_most_k_with_remaining_timeout(list(self.vars[t,h,:,:].flatten()), upper_bound)
+                    if not added:
+                        sat_result = unknown
+                        break
                 if sat_result == unknown:
                     break
             if sat_result == sat:
@@ -343,10 +493,11 @@ class SAT2(ContextSolver):
                 if self.remaining_timeout_ms() <= 0:
                     sat_result = unknown
                     break
-                at_least_k_home_match = at_least_k([(self.HOME[t][w]) for w in range(self.week)] , lower_bound)
-                at_least_k_away_match = at_least_k([Not(self.HOME[t][w]) for w in range(self.week)] , lower_bound) 
-                self.solver.add(at_least_k_home_match)
-                self.solver.add(at_least_k_away_match)    
+                home_added = self.add_at_least_k_with_remaining_timeout([self.HOME[t][w] for w in range(self.week)], lower_bound)
+                away_added = self.add_at_least_k_with_remaining_timeout([Not(self.HOME[t][w]) for w in range(self.week)], lower_bound)
+                if not home_added or not away_added:
+                    sat_result = unknown
+                    break
             if sat_result == sat:
                 sat_result = self.check_with_remaining_timeout() 
             if(sat_result == sat):

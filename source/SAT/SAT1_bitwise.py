@@ -12,7 +12,7 @@ script_path = ''                   # Name if this script is executed for debuggi
 docker_path = '/app/outputs/SAT/'  # Name if this script is executed from docker script
 SEED_FOR_REPRODUTION = 0       # set to 0 for default; >0 for reproduce an attempt
 team , weeks , periods , home , default_filename , optimized_version , precomputing_version = get_user_settings(sys.argv , docker_path , script_path)
-timeout = 300000 # milliseconds
+timeout = 10000 # milliseconds
 ################################# PARAMETERS ###############################
 
 
@@ -65,10 +65,15 @@ def exactly_k(bool_vars, k):
 
 
 ################################# DOMAIN DEFINITION ###############################
+print("-------------------------------------------------------------------------------------------------")
 start1 = time.perf_counter()
+init_progress = ProgressPrinter("model init running", timeout // 1000, start1)   # Define thread for timeout during model initialization (in seconds)
+init_progress.start()
+timeout_solution_name = solution_name_with_settings('SAT1-bitwise', optimized_version)
 # Define the variable
 vars = np.empty((team , home , periods , weeks) , dtype=object)
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for h in range(0,home):    # home = 0 (team play away)   ;  home = 1 (team play at home)
         for p in range(0,periods):
             for w in range(0,weeks):
@@ -78,8 +83,6 @@ for t in range(0,team):
                 else:
                     #vars[t,h,p,w] = Bool(f"T{t+1}-P{p+1}-W{w+1}(HOME)") # an other possible notation
                     vars[t,h,p,w] = Bool(f"X{t+1}{h}{p+1}{w+1}") 
-
-print("-------------------------------------------------------------------------------------------------")
 
 
 model = Optimize()  # Use Solver() if you don't use optimization function
@@ -93,6 +96,7 @@ model = Optimize()  # Use Solver() if you don't use optimization function
 # Constraint1 - Every team plays with every other team only once;
 clauses = []
 for t1 in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t2 in range(t1+1,team):
             for p in range(0,periods):
                 for w in range(0,weeks):
@@ -106,17 +110,20 @@ for t1 in range(0,team):
 
 # Constraint2 - Every team plays once at week
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for w in range(0,weeks):
         model.add(exactly_one_bitwise( list(vars[t,:,:,w].flatten()) , name = f't{t}w{w}'))
 
 # Constraint3 - Every team plays at most twice in the same period over the tournament.
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(0,periods):
         c = at_most_k( list(vars[t,:,p,:].flatten()) , k = 2 )
         model.add(c)
 
 # Constraint 4 - Each game has exactly 2 team + Each game cannot be played by 2 home-team or 2 away-team
 for h in range(home):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(periods):
         for w in range(weeks):
             model.add(exactly_one_bitwise([vars[t,h,p,w] for t in range(team)] , name = f'h{h}p{p}w{w}') )
@@ -149,8 +156,9 @@ for t in range(team):
             bitwise.add(at_most_one_bitwise(list(vars[t,:,p,w].flatten()) , name = f"t{t}p{p}w{w}" ))  
             # print("4.1 number of clause in the at_most_one: " , len(list(vars[t,:,p,w].flatten()))) # Dimension check 
 """
-
+exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 start2 = time.perf_counter()
+init_progress.stop()
 init_time = start2-start1
 print(f"Init finished! ({init_time:.2f}s)")
 ################################# CONSTRAINT ###############################

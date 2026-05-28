@@ -64,9 +64,13 @@ def exactly_one_heule(bool_vars, name = 'A'):
 
 ################################# DOMAIN DEFINITION ###############################
 start1 = time.perf_counter()
+init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
+init_progress.start()
+timeout_solution_name = solution_name_with_settings('SAT1-heule', optimized_version)
 # Define the variable
 vars = np.empty((team , home , periods , weeks) , dtype=object)
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for h in range(0,home):    # home = 0 (team play away)   ;  home = 1 (team play at home)
         for p in range(0,periods):
             for w in range(0,weeks):
@@ -91,6 +95,7 @@ model = Optimize()  # Use Solver() if you don't use optimization function
 # Constraint1 - Every team plays with every other team only once;
 clauses = []
 for t1 in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t2 in range(t1+1,team):
             for p in range(0,periods):
                 for w in range(0,weeks):
@@ -104,23 +109,26 @@ for t1 in range(0,team):
 
 # Constraint2 - Every team plays once at week
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for w in range(0,weeks):
         model.add(exactly_one_heule( list(vars[t,:,:,w].flatten()) , name = f't{t}w{w}' ))
 
 # Constraint3 - Every team plays at most twice in the same period over the tournament.
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(0,periods):
         c = at_most_k( list(vars[t,:,p,:].flatten()) , k = 2 )
         model.add(c)
 
 # Constraint 4 - Each game has exactly 2 team + Each game cannot be played by 2 home-team or 2 away-team
 for h in range(home):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(periods):
         for w in range(weeks):
             model.add(exactly_one_heule([vars[t,h,p,w] for t in range(team)] , name = f'h{h}p{p}w{w}') )
-
-
+exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 start2 = time.perf_counter()
+init_progress.stop()
 init_time = start2-start1
 print(f"Init finished! ({init_time:.2f}s)")
 ################################# CONSTRAINT ###############################

@@ -79,6 +79,9 @@ def exactly_one_heule(bool_vars, name = 'A'):
 
 # ============================== MODEL VARS =================================
 start1 = time.perf_counter()
+init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
+init_progress.start()
+timeout_solution_name = solution_name_with_settings('SAT2', optimized_version, precomputing_version)
 M = [[[Bool(f"M_{t1}_{t2}_w{w}") for w in range(weeks)] for t2 in range(team)] for t1 in range(team)] # t1,t2 plays in week w
 P = [[[Bool(f"P_t{t}_p{p}_w{w}") for w in range(weeks)] for p in range(periods)] for t in range(team)] # team t is assigned to period p in week w
 HOME = [[Bool(f"HOME_{t}_w{w}") for w in range(weeks)] for t in range(team)] # team t is home in week w
@@ -88,34 +91,40 @@ model = Solver()
 
 # Constraint 1 : every team plays with every other team only once;
 for t1 in range(team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t2 in range(t1 + 1, team):
         model.add(PbEq([(M[t1][t2][w], 1) for w in range(weeks)], 1))
 
 # Constraint2 : each team play exactly one per week: sum over p of P[t][p][w] == 1
 for w in range(weeks):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t in range(team):
         # S.add(PbEq([(P[t][p][w], 1) for p in range(periods)], 1))   # SAT translation of x1​+x2​+x3​ = 1 (PbEq also enabled weight 3x1 + 4x2 + ...)
         model.add(exactly_k([P[t][p][w] for p in range(periods)], 1))   # TODO : use exactly one of sequential,heule,bitwise
 
 # Constraint3 : each team plays two per period : sum over weeks of P[t][p][w] <= 2
 for t in range(team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(periods):
         model.add(PbLe([(P[t][p][w], 1) for w in range(weeks)], 2))
 
 # Constraint4 : Home/away consistency: when (t1,t2) plays in w, HOME differs
 for w in range(weeks):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t1 in range(team):
         for t2 in range(t1 + 1, team):
             model.add(Implies(M[t1][t2][w], Xor(HOME[t1][w], HOME[t2][w])))
             
 # Constraint5 : Each game is played by 2 team : sum over t of P[t][p][w] == 2
 for w in range(weeks):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(periods):
         model.add(PbEq([(P[t][p][w], 1) for t in range(team)], 2))     # SAT translation of x1​+x2​+x3​ =2 (PbEq also enabled weight 3x1 + 4x2 + ...)
         # S.add(exactly_k([P[t][p][w] for t in range(team)], 2))     # TODO : use exactly k of sequential 
 
 #Link periods variable (P) to pair variable (M)
 for w in range(weeks):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t1 in range(team):
         for t2 in range(t1 + 1, team):
             # If the pair plays in week w, they share exactly one period
@@ -142,6 +151,7 @@ if precomputing_version:
 
     # Say that is sat only if the generated couple are the one in M_true
     for t1 in range(team):
+        exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
         for t2 in range(t1+1, team):
             for w in range(weeks):
                 if (t1, t2, w) in M_true:
@@ -151,8 +161,10 @@ if precomputing_version:
     pre2 = time.perf_counter()
     precomputing_time = pre2-pre1
     print(f"Precomputing time :  ({precomputing_time:.2f}s)")
-    
+
+exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 start2 = time.perf_counter()
+init_progress.stop()
 init_time = start2 - start1
 print(f"Init finished! ({init_time:.2f}s)")
 
@@ -194,4 +206,3 @@ if debug_info:
     for w in range(weeks):
         print("IN THE WEEK ", w ," will be played only this matches", " = " , temp_round_robin[w])
         
-

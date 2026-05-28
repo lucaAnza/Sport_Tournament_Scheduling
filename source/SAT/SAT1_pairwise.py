@@ -48,9 +48,13 @@ def exactly_k(bool_vars, k):
 
 ################################# DOMAIN DEFINITION ###############################
 start1 = time.perf_counter()
+init_progress = ProgressPrinter("model init running", timeout // 1000, start1)
+init_progress.start()
+timeout_solution_name = solution_name_with_settings('SAT1', optimized_version)
 # Define the variable
 vars = np.empty((team , home , periods , weeks) , dtype=object)
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for h in range(0,home):    # home = 0 (team play away)   ;  home = 1 (team play at home)
         for p in range(0,periods):
             for w in range(0,weeks):
@@ -73,6 +77,7 @@ model = Optimize()
 # Constraint1 - Every team plays with every other team only once;
 clauses = []
 for t1 in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for t2 in range(t1+1,team):
             for p in range(0,periods):
                 for w in range(0,weeks):
@@ -86,17 +91,20 @@ for t1 in range(0,team):
 
 # Constraint2 - Every team plays once at week
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for w in range(0,weeks):
         model.add(exactly_one( list(vars[t,:,:,w].flatten()) ))
 
 # Constraint3 - Every team plays at most twice in the same period over the tournament.
 for t in range(0,team):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(0,periods):
         c = at_most_k( list(vars[t,:,p,:].flatten()) , k = 2 )
         model.add(c)
 
 # Constraint 4 - Each game has exactly 2 team + Each game cannot be played by 2 home-team or 2 away-team
 for h in range(home):
+    exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
     for p in range(periods):
         for w in range(weeks):
             model.add(exactly_one([vars[t,h,p,w] for t in range(team)]  ))
@@ -104,6 +112,7 @@ for h in range(home):
 # Constraint-Extra1 (in the first line, match are fixed)
 model.add(And([ Or(vars[t,0,0,t], vars[t,1,0,t]) for t in range(team - 1) ]))
 model.add(Or(vars[team-1,0,0,0] , vars[team-1,1,0,0]))
+exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 
 """# Constraint-Extra1 (in the first,second column, match are fixed)
 temp_list = []
@@ -114,7 +123,9 @@ for t in range(0, (team-1)):
     temp_list.append(Or(vars[t,0, line , column] , vars[t,1,line,column]))
 pairwise.add(And(temp_list))"""
 
+exit_if_init_timeout(start1, timeout, default_filename, timeout_solution_name, init_progress)
 start2 = time.perf_counter()
+init_progress.stop()
 init_time = start2-start1
 print(f"Init finished! ({init_time:.2f}s)")
 ################################# CONSTRAINT ###############################
