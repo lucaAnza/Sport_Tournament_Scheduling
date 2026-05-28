@@ -1,3 +1,5 @@
+# MacOS Dekstop Service file
+**.DS_Store
 .codex
 .agents
 .env
