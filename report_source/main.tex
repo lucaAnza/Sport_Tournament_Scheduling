@@ -110,11 +110,11 @@ the number of clauses, and the strength of constraint propagation.
 \vspace{1em}
 \textit{Model~2} extends the formulation of Model~1 by adding further constraints and auxiliary decision variables. In contrast to Model~1, the implementation adopts a single SAT encoding approach (e.g., pairwise-style cardinality constraints) and does not perform a systematic comparison across alternative encodings.
 
-The formulation ideas behind this model emerged partly from conceptual discussions supported by ChatGPT \cite{chatgpt} (version~5.2), which helped explore alternative modeling perspectives and refinements.
+The purpose of Model~2 is not to benchmark competing encoding techniques, but to assess how a more expressive formulation affects solver performance and scalability.
 
-Moreover, the implementation can optionally enable a \textbf{precomputing} phase: a round-robin pairing generator fixes in advance which team pairs are allowed to play in each week, and the corresponding ($M_{t_1,t_2,w}$) variables are forced to either true or false accordingly. This reduces the search space by eliminating week–pair symmetries and infeasible match placements before solving, allowing us to study how much of the performance change comes from a more constrained model versus additional upfront structural pruning.
+Moreover, the implementation can optionally enable a \textbf{precomputing} phase described in paragraph \ref{par:precomputing_sat}.
 
-The purpose of Model~2 is therefore not to benchmark competing encoding techniques, but to assess how a more expressive formulation affects solver performance and scalability.
+
 
 
 
@@ -280,10 +280,11 @@ M_{t_1,t_2,w} \;\Rightarrow\; \bigvee_{p=1}^{P}\big(P_{t_1,p,w}\land P_{t_2,p,w}
 (Equivalently: \(M_{t_1,t_2,w}\) iff the two teams share some period \(p\) in week \(w\).)
 \end{itemize}
 
-\paragraph{Simmetry breaking.}
+\paragraph{Precomputing tecnique.}
+\label{par:precomputing_sat}
 
 \begin{itemize}
-\item[(C7)] \textbf{Precomputed round-robin pruning.}
+\item[(P1)] \textbf{Precomputed round-robin pruning.}
 Let \(\mathcal{R}_w\subseteq\{\{t_1,t_2\}\mid t_1<t_2\}\) be the fixed set of pairs for week \(w\) produced by the round-robin generator. Then:
 \[
 \forall\, w,\, t_1<t_2\qquad
@@ -307,28 +308,18 @@ All experiments were conducted using the \texttt{Z3} solver for SAT and
 optimization (\cite{z3}). The implementation is provided in Python, and the solver is
 invoked through the \textbf{Z3 API}. 
 \\
-The experiments were run on two different operating systems, namely
-\emph{Windows} and \emph{Linux}, to ensure portability of the implementation.
-The hardware platform was a laptop equipped with a \textit{12th Gen
-Intel(R) Core(TM) i7-1280P} processor and an \textit{NVIDIA RTX-3060 GPU}. No GPU
-acceleration was employed for the SAT solving itself, which ran entirely on
-the CPU.  \\
-\\
-In order to reproduce the experiments, it is sufficient to follow the
-instructions provided in the accompanying \texttt{README.md} file, which
-details the installation steps and execution commands. The solver was run
-without a fixed time limit, but execution times were recorded as reported in
-the results section.
-\\
-For reproducibility, a fixed random seed (\texttt{SEED\_FOR\_REPRODUTION})
-can be set in the configuration. By default this seed is set to~0, meaning
-that Z3’s internal randomization is left free, but setting it to a positive
-integer ensures deterministic and repeatable runs across different executions
-and platforms.
+The experiments were tested on \emph{Linux} on a laptop equipped with a
+\textit{12th Gen Intel(R) Core(TM) i7-1280P} processor and an
+\textit{NVIDIA RTX-3060 GPU}. No GPU acceleration was employed for the SAT
+solving itself, which ran entirely on the CPU.
+
+Reproducibility instructions, including installation steps and execution
+commands, are provided in the accompanying \texttt{README.md} file.
 
 
 
 \paragraph{Experimental results} \mbox{}\\
+\label{par:Experimental_result_SAT}
 
 The \textbf{following tables reports} the results of the SAT experiments. 
 Each row corresponds to a different value of $n$. 
@@ -567,11 +558,7 @@ The experimental procedure follows the same workflow adopted for the SAT-based e
 
 \paragraph{Experimental results} \mbox{}\\
 
-The \textbf{following tables report} the results of the MIP experiments.
-Each row corresponds to a different value of $n$.
-For each instance, the tables report the objective value obtained by the different MIP modeling approaches.
-When an instance is solved to optimality, the corresponding objective value is shown in \textbf{bold}.
-If no feasible solution is found within the allotted time limit, the result is reported as \textit{N/A}.
+The interpretation of the reported results and the meaning of the table entries follow the same convention described in Section~\ref{par:Experimental_result_SAT}.
 
 % MODEL MIP - TABLE 
 \begin{table}[h]
@@ -748,12 +735,7 @@ the CPU.  \\
 
 
 \paragraph{Experimental results.}
-In the following table we reported the imbalance values of the best solution found by the solver within the time limit of 5 minutes.
-Is important to notice that the values in the table are the values of the $max$ objective function implemented for CP, introduced in section \ref{CP obj function}.
-Optimal results are marked in \textbf{bold}, \texttt{UNSAT} if the problem is proven infeasible and \texttt{N/A} if no result was found after the time limit.
-% In this table, timing information of the solutions are not reported, but is important to know that the same solution found by the models with symmetry breaking constraints are obtained in less time with respect to those found by the standard model, e.g Chuffed-SB found the optimal solution for n=14 in 99 seconds, while Chuffed+SB found it in 68 seconds.
-For non-optimal solutions, also the value of the original objective function is shown in brackets.
-A curious result showed up for $n$=18, where the additional constraint worsened the best solution found within the time limit. This could be due to the specific random seed we set, but maybe the specific number of teams can be a determinant factor, since for $n$=20 we had no solutions at all without SB constraints.
+The interpretation of the reported results and the meaning of the table entries follow the same convention described in Section~\ref{par:Experimental_result_SAT}.
 \begin{table}[h]
 \centering
 \caption{Results with/without symmetry breaking}
@@ -835,9 +817,6 @@ Henrique R. Lopes, Thiago A. F. S. Santos, and Tallys H. Y. Lopes.
 \emph{Python-MIP: A Python Toolbox for Modeling and Solving Mixed-Integer Linear Programs}.
 SoftwareX, Volume 12, 2020.\\
 \url{https://www.python-mip.com/}
-
-\bibitem{chatgpt}
-OpenAI. \emph{ChatGPT (GPT-5.2)}. 2026. Available at: \url{https://openai.com/}
 
 
 \end{thebibliography}
