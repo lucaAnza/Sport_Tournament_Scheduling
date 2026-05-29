@@ -1,0 +1,82 @@
+{
+    "SAT1-pairwise": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-heule": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-bitwise": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-sequential": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+            [[2,1]]
+        ]
+    },
+    "SAT2(PRECOMPUTING)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-pairwise(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 2,
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-heule(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 2,
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-bitwise(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 2,
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "SAT1-sequential(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 2,
+        "sol": [
+            [[2,1]]
+        ]
+    },
+    "SAT2(OPT-version)(PRECOMPUTING)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 2,
+        "sol": [
+            [[1,2]]
+        ]
+    }
+}
