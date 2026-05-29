@@ -30,7 +30,6 @@ Martino Michelotti \texttt{martino.michelotti@studio.unibo.it}
 \section{Introduction}
 This report addresses the solution of the well-known \emph{Sports Tournament Scheduling Problem (STS\cite{csplib_prob026})}.
 The focus is on presenting different modeling approaches and optimization techniques to handle the scheduling constraints and objectives.  
-Throughout the report we describe the common elements that underlie all models: the inputs, symbols, shared objective variable and bounds, global pre-processing, and any assumptions. 
 To avoid repetition, later sections will refer back to this introduction whenever these shared components are required.
 
 \paragraph{Instance parameters}
@@ -66,10 +65,6 @@ The objective is to minimize the overall imbalance:
 \#\text{home\_games}(t) - \#\text{away\_games}(t) \; \Big|
 \]
 
-This formulation depends only on the instance parameters
-($T, W, P$) that define how many games each team must play,
-and expresses the high-level goal of fairness in the tournament.
-
 Since $W$ is uneven by the definition of the problem, it is clear that no team could ever play the same number of home and away games and therefore the minimal value of $\big|  
 \#\text{home\_games}(t) - \#\text{away\_games}(t)  \big|$ for every team $t$ cannot be lower than 1.
 This implies that the objective function is (non-strictly) bounded below by the number of teams $T=n$, that we will find out that it corresponds to the optimal value we are looking for.
@@ -81,24 +76,6 @@ This implies that the objective function is (non-strictly) bounded below by the 
 \section{SAT Model}
 
 The SAT solution was made using two different modeling approaches. Both are included in the report. 
-
-\paragraph{Notation.}
-Throughout the constraints we use the following shorthand:
-
-\[
-\begin{aligned}
-\sum x_i \;\;\geq k &\quad\Longleftrightarrow\quad \text{``at least $k$ of the $x_i$ are true''}, \\[6pt]
-\sum x_i \;\;= k   &\quad\Longleftrightarrow\quad \text{``exactly $k$ of the $x_i$ are true''}, \\[6pt]
-\sum x_i \;\;\leq k &\quad\Longleftrightarrow\quad \text{``at most $k$ of the $x_i$ are true''}.
-\end{aligned}
-\]
-
-In the implementation these correspond respectively to the encodings 
-\texttt{at\_least\_k}, \texttt{exactly\_k}, and \texttt{at\_most\_k}. The special cases with $k=1$ are captured by the usual constraints:
-$ \texttt{at\_least\_one}, 
-\texttt{at\_most\_one}, $ and $ 
-\texttt{exactly\_one}.
-$
 
 \vspace{1em}
 \textit{Model~1} was implemented using several alternative SAT encodings for the cardinality
@@ -148,10 +125,7 @@ problem formulation fixed.
 Model--2 introduces explicit pair variables \(M_{t_1,t_2,w}\) to capture
 which two teams meet in a given week, home assignment variables
 \(HOME_{t,w}\) to distinguish roles, and period variables
-\(P_{t,p,w}\) to ensure consistency of scheduling. It also supports
-a \emph{precomputing} mode, where a round-robin structure is generated
-in advance and infeasible pairs are pruned by setting the corresponding
-\(M_{t_1,t_2,w}\) literals to false.
+\(P_{t,p,w}\) to ensure consistency of scheduling.
 
 
 \subsection{Objective function}
@@ -339,24 +313,20 @@ $n\approx50$, and therefore has no practical impact on the overall computational
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1}
 \begin{tabular}{c|c|c|c|c}
-
 \hline
 $n$ & Bitwise & Heule & Pairwise & Sequential \\
 \hline
-2   & \textbf{2}  & \textbf{2}  & \textbf{2} & \textbf{2}  \\
-4   & \texttt{UNSAT}  & \texttt{UNSAT}  &\texttt{UNSAT}  & \texttt{UNSAT} \\
-6   & \textbf{6}  & \textbf{6}  & \textbf{6} & \textbf{6}  \\
-8   & 18        & 16     & 20   &  32 \\
-10  & 28        & 26     & 26   &  24 \\
-12  & 26        & 40     & 34  &  46 \\
-14  & \texttt{N/A}  & \texttt{N/A}& \texttt{N/A}  &  \texttt{N/A}     \\
+2   & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{2} \\
+4   & \texttt{UNSAT} & \texttt{UNSAT} & \texttt{UNSAT} & \texttt{UNSAT} \\
+6   & \textbf{6} & \textbf{6} & \textbf{6} & \textbf{6} \\
+8   & 14 & 24 & 18 & 24 \\
+10  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
+12  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
+14  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
 \hline
 \end{tabular}
 \caption{Experimental results of Model 1}
 \label{tab:results_sat_m1}
-
-
-% MODEL 2 - TABLE
 
 \end{minipage}
 \hfill
@@ -367,16 +337,16 @@ $n$ & Bitwise & Heule & Pairwise & Sequential \\
 \hline
 $n$ & Standard & Precomputing\\
 \hline
-2   & \textbf{2}  & \textbf{2}   \\
-4   & \texttt{UNSAT}  & \texttt{UNSAT}  \\
-6   & \textbf{6}  & \textbf{6}   \\
-8   & \textbf{8}           & \textbf{8}    \\
-10  & \textbf{10}           & \textbf{10}           \\
-12  & \textbf{12}          & \textbf{12}             \\
-14  & \textbf{14}          & \textbf{14}                    \\
-16  & 46       & \textbf{16}             \\
-18  &\texttt{N/A}   & 162             \\
-20  & \texttt{N/A}  & \texttt{N/A}            \\
+2   & \textbf{2} & \textbf{2} \\
+4   & \texttt{UNSAT} & \texttt{UNSAT} \\
+6   & \textbf{6} & \textbf{6} \\
+8   & \textbf{8} & \textbf{8} \\
+10  & \textbf{10} & \textbf{10} \\
+12  & \textbf{12} & \textbf{12} \\
+14  & \textbf{14} & \textbf{14} \\
+16  & 46 & \textbf{16} \\
+18  & \texttt{N/A} & 44 \\
+20  & \texttt{N/A} & 200 \\
 \hline
 \end{tabular}
 \caption{Experimental results of Model 2}
