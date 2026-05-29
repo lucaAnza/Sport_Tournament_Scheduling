@@ -1,0 +1,34 @@
+{
+    "CP - Gecode (No SB)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 1,
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "CP - Chuffed (No SB)": {
+        "time": 0,
+        "optimal": true,
+        "obj": 1,
+        "sol": [
+            [[2,1]]
+        ]
+    },
+    "CP - Gecode + SB": {
+        "time": 0,
+        "optimal": true,
+        "obj": 1,
+        "sol": [
+            [[1,2]]
+        ]
+    },
+    "CP - Chuffed + SB": {
+        "time": 0,
+        "optimal": true,
+        "obj": 1,
+        "sol": [
+            [[1,2]]
+        ]
+    }
+}

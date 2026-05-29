@@ -1,0 +1,18 @@
+{
+    "CP - Chuffed (No SB)": {
+        "time": 300,
+        "optimal": false,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "CP - Chuffed + SB": {
+        "time": 300,
+        "optimal": false,
+        "obj": "None",
+        "sol": [
+
+        ]
+    }
+}
