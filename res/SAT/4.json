@@ -1,0 +1,82 @@
+{
+    "SAT1-pairwise(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-heule(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-bitwise(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-sequential(OPT-version)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT2(OPT-version)(PRECOMPUTING)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-pairwise": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-heule": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-bitwise": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT1-sequential": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    },
+    "SAT2(PRECOMPUTING)": {
+        "time": 0,
+        "optimal": true,
+        "obj": "None",
+        "sol": [
+
+        ]
+    }
+}
