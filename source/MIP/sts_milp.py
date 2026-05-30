@@ -402,6 +402,8 @@ def extract_schedule():
 
 data = load_json_file(output_file)
 
+solved_runtime_to_export = min(runtime_floor, TIME_LIMIT - 1)
+
 if args.optimized:
     optimal = status == OptimizationStatus.OPTIMAL
 
@@ -410,7 +412,7 @@ if args.optimized:
         obj_to_export = int(round(m.objective_value))
 
         if optimal:
-            runtime_to_export = runtime_floor
+            runtime_to_export = solved_runtime_to_export
         else:
             runtime_to_export = TIME_LIMIT
 
@@ -425,7 +427,7 @@ else:
         sol_to_export = extract_schedule()
         obj_to_export = None
         optimal = True
-        runtime_to_export = runtime_floor
+        runtime_to_export = solved_runtime_to_export
 
     else:
         sol_to_export = []

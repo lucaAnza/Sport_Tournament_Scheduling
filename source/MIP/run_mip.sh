@@ -132,6 +132,7 @@ interactive_menu() {
         echo "0. EXIT"
         echo "============================"
 
+
         read -rp "Select a program to run: " choice
 
         case "$choice" in
@@ -162,3 +163,33 @@ interactive_menu() {
     done
 }
 
+
+# ============================================================
+# Entry point
+# ============================================================
+
+if [[ $# -eq 0 ]]; then
+    interactive_menu
+    exit 0
+fi
+
+if [[ "$1" == "all" ]]; then
+    run_all
+    exit 0
+fi
+
+if [[ $# -lt 2 ]]; then
+    echo "Usage:"
+    echo "  ./run_mip.sh"
+    echo "  ./run_mip.sh --docker"
+    echo "  ./run_mip.sh <n> <decision|optimized>"
+    echo "  ./run_mip.sh <n> <decision|optimized> --docker"
+    echo "  ./run_mip.sh all"
+    echo "  ./run_mip.sh all --docker"
+    exit 1
+fi
+
+team="$1"
+mode="$2"
+
+run_one "$team" "$mode"
