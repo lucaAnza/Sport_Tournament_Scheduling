@@ -56,8 +56,7 @@ The classical formulation of the STS problem requires that:
 
 The main optimization criterion is to achieve a balanced schedule,
 in which every team plays approximately the same number of home and away
-games. In particular, given the instance parameters 
-$T$ teams, $W$ weeks, and $P$ periods.
+games. 
 The objective is to minimize the overall imbalance:
 
 \[
@@ -85,9 +84,7 @@ Each encoding provides a different trade-off between the number of variables,
 the number of clauses, and the strength of constraint propagation.
 
 \vspace{1em}
-\textit{Model~2} extends the formulation of Model~1 by adding further constraints and auxiliary decision variables. In contrast to Model~1, the implementation adopts a single SAT encoding approach (e.g., pairwise-style cardinality constraints) and does not perform a systematic comparison across alternative encodings.
-
-The purpose of Model~2 is not to benchmark competing encoding techniques, but to assess how a more expressive formulation affects solver performance and scalability.
+\textit{Model~2} extends the formulation of Model~1 by adding further constraints and auxiliary decision variables. In contrast to Model~1, the implementation adopts a single SAT encoding approach (e.g., pairwise-style cardinality constraints) and does not perform a systematic comparison across alternative encodings.  
 
 Moreover, the implementation can optionally enable a \textbf{precomputing} phase described in paragraph \ref{par:precomputing_sat}.
 
@@ -299,60 +296,68 @@ The \textbf{following tables reports} the results of the SAT experiments.
 Each row corresponds to a different value of $n$. 
 the value of the objective value obtained using different approach. If the instance is solved to optimality is in bold. In addition if the instance is proved to be
 unsatisfiable, it is indicate as \texttt{UNSAT} and if no answer is obtained within the
-time limit are indicate it with \texttt{N/A}.
+time limit of 300s are indicate it with \texttt{N/A}.
 Each modeling approach have is own table (Tab.~\ref{tab:results_sat_m1} and Tab.~\ref{tab:results_sat_m2}).  
 
 The \textbf{precomputation time} required to generate the round-robin pairs is not reported in the tables, as it is negligible: it remains below one second even for 
 $n\approx50$, and therefore has no practical impact on the overall computational performance.
 
-% MODEL 1 - TABLE
+```latex
+% MODEL 1 and MODEL 2 - UPDATED TABLE
 \begin{table}[h]
-\begin{minipage}{0.45\textwidth}
-
 \centering
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1}
+\scriptsize
+
+\begin{minipage}[t]{0.55\textwidth}
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
 \begin{tabular}{c|c|c|c|c}
 \hline
 $n$ & Bitwise & Heule & Pairwise & Sequential \\
 \hline
-2   & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{2} \\
-4   & \texttt{UNSAT} & \texttt{UNSAT} & \texttt{UNSAT} & \texttt{UNSAT} \\
-6   & \textbf{6} & \textbf{6} & \textbf{6} & \textbf{6} \\
-8   & 14 & 24 & 18 & 24 \\
-10  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
-12  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
-14  & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} & \texttt{N/A} \\
+2   & \textbf{2} (0s)  & \textbf{2} (0s)  & \textbf{2} (0s)  & \textbf{2} (0s) \\
+4   & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) \\
+6   & \textbf{6} (0s)  & \textbf{6} (0s)  & \textbf{6} (0s)  & \textbf{6} (0s) \\
+8   & 14 (1s)          & 24 (1s)          & 18 (1s)          & 24 (0s) \\
+10  & 26 (6s)          & 36 (4s)          & 18 (7s)          & 20 (6s) \\
+12  & 30 (87s)         & 44 (13s)         & 36 (40s)         & 30 (151s) \\
+14  & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A} \\
+16  & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A} \\
 \hline
 \end{tabular}
-\caption{Experimental results of Model 1}
+\caption{Experimental results of Model 1.}
 \label{tab:results_sat_m1}
-
 \end{minipage}
 \hfill
-\begin{minipage}[t]{0.4\textwidth}
+\begin{minipage}[t]{0.42\textwidth}
 \centering
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
 \begin{tabular}{c|c|c}
 \hline
-$n$ & Standard & Precomputing\\
+$n$ & Standard & Precomputing \\
 \hline
-2   & \textbf{2} & \textbf{2} \\
-4   & \texttt{UNSAT} & \texttt{UNSAT} \\
-6   & \textbf{6} & \textbf{6} \\
-8   & \textbf{8} & \textbf{8} \\
-10  & \textbf{10} & \textbf{10} \\
-12  & \textbf{12} & \textbf{12} \\
-14  & \textbf{14} & \textbf{14} \\
-16  & 46 & \textbf{16} \\
-18  & \texttt{N/A} & 44 \\
-20  & \texttt{N/A} & 200 \\
+2   & \textbf{2} (--)      & \textbf{2} (0s) \\
+4   & \texttt{UNSAT} (--)  & \texttt{UNSAT} (0s) \\
+6   & \textbf{6} (--)      & \textbf{6} (0s) \\
+8   & \textbf{8} (--)      & \textbf{8} (0s) \\
+10  & \textbf{10} (--)     & \textbf{10} (0s) \\
+12  & \textbf{12} (3s)     & \textbf{12} (1s) \\
+14  & \textbf{14} (83s)    & \textbf{14} (6s) \\
+16  & 46 (244s)            & \textbf{16} (10s) \\
+18  & \texttt{N/A}         & 44 (53s) \\
+20  & \texttt{N/A}         & 200 (272s) \\
+22  & \texttt{N/A}         & \texttt{N/A} \\
 \hline
 \end{tabular}
-\caption{Experimental results of Model 2}
+\caption{Experimental results of Model 2.}
 \label{tab:results_sat_m2}
 \end{minipage}
 \end{table}
+```
+
+
 
 
 
@@ -480,13 +485,6 @@ With this model we don't need to explicitly ask for exactly two teams in each sl
         \forall p =1,\dots,P\qquad   &Y_{1,p,(2p-1,\,2p)}=1\\
         &H_{1,p,(2p-1,\,2p)}=1
     \end{align*}
-
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.5\linewidth]{MIP_C4.png}
-        \caption{C5 Scheme}
-        \label{fig:placeholder5}
-    \end{figure}
     
     \item[(C6)] Since the weeks are interchangeable in our formulation (constraints and objective do not depend on the week index), we can break the week-permutation symmetry by fixing the opponent of team 1 in each week, without fixing the period.
     \[
@@ -494,28 +492,11 @@ With this model we don't need to explicitly ask for exactly two teams in each sl
     \]
     i.e., in week \(w\) team \(1\) plays against team \(w+1\) in some period \(p\).
 
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.5\linewidth]{MIP_C5.png}
-        \caption{C6 Scheme}
-        \label{fig:placeholder6}
-    \end{figure}
-
     \item[(C7)] In addition we break symmetry by fixing the main diagonal of the schedule matrix: in each diagonal slot \((w,p)=(p,p)\) (for the first \(P\) weeks), team \(1\) must be scheduled, without fixing the opponent. Formally:
     \[
     \forall p = 1,\dots,P \qquad
     \sum_{j=2}^{T} y_{p,p,(1,j)} = 1.
     \]
-
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.5\linewidth]{MIP_C6.png}
-        \caption{C7 Scheme}
-        \label{fig:placeholder7}
-    \end{figure}
-
-
-
     
 \end{itemize}
 
@@ -668,7 +649,6 @@ The constraints are imposed especially on team 1 and week 1 for simplicity, but 
             \forall p \qquad H_{2p-1, 1} =  \verb|true| \; \land \; H_{2p, 1} = \verb|false|\;.
             \]
     \end{itemize}
-    The result is a completely fixed first week, as illustrated for the MIP case for $n$=6 in Figure \ref{fig:placeholder5}.
 
     \item [(C10)] We impose an increasing order of the opponents for team 1 with the following constraint:
     \[
@@ -758,12 +738,10 @@ Parts of this project (text/code/experiments) were assisted by AI tools where in
 
 \paragraph{Author contributions.}
 Luca Anzaldi developed the SAT-based formulations, including both Model~1 and
-Model~2. He was responsible for the reformulation of the MIP constraints, the
+Model~2. He was responsible the
 configuration and setup of all scripts, Docker environments, and auxiliary
 tools required to run the experiments.
-%He also carried out a comprehensive revision of the entire report.
-Martino Michelotti developed the complete CP model and designed the core of the MIP
-model. % He also contributed to the final revision of the report.
+Martino Michelotti developed the complete CP model.
 The report was written by both students, mostly reporting the part of the project they were responsible of.
 
 % --------------- References ---------------
