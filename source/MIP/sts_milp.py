@@ -16,10 +16,7 @@ from mip import (
 )
 
 
-# ============================================================
-# 1. ARGUMENT PARSING AND PATHS
-# ============================================================
-
+# Argument parsing
 def parse_args():
     parser = argparse.ArgumentParser(
         description="MIP model for the Sports Tournament Scheduling problem."
@@ -56,15 +53,16 @@ def parse_args():
 
 
 def find_project_root():
+    start_dir = Path(__file__).resolve()
 
-    current_file = Path(__file__).resolve()
+    markers = ["README.md", "Dockerfile", "start.sh"]
 
-    for parent in current_file.parents:
-        if parent.name == "code":
-            return parent.parent
+    for path in [start_dir, *list(start_dir.parents)]:
+        for marker in markers:
+            if (path / marker).exists():
+                return path
 
-    
-    return current_file.parent.parent
+    return start_dir
 
 
 def get_output_directory(args):
@@ -78,9 +76,7 @@ def get_output_directory(args):
     return project_root / "res" / "MIP"
 
 
-# ============================================================
-# 2. JSON UTILITIES
-# ============================================================
+# Json utilities
 
 def load_json_file(filename):
     if not filename.exists():
@@ -113,9 +109,7 @@ def add_solution_json(data, approach_name, runtime, optimal, obj, sol):
     return data
 
 
-# ============================================================
-# 3. INSTANCE SETUP
-# ============================================================
+# Instance setup
 
 args = parse_args()
 
@@ -161,9 +155,7 @@ for k, pair in enumerate(pairs):
     pair_idx[pair] = k
 
 
-# ============================================================
-# 4. CREATE MODEL
-# ============================================================
+# Create model
 
 model_build_start = time.perf_counter()
 
@@ -171,9 +163,7 @@ m = Model(sense=minimize, solver_name=CBC)
 m.verbose = 0
 m.threads = 1
 
-# ============================================================
-# 5. DECISION VARIABLES
-# ============================================================
+# Decision variables
 
 # y[w][p][k] = 1 iff pair k is scheduled in week w and period p.
 y = []
@@ -212,9 +202,7 @@ for w in weeks:
     home.append(week_vars)
 
 
-# ============================================================
-# 6. CORE STS CONSTRAINTS
-# ============================================================
+# Core STS constraints
 
 # Every pair of teams plays exactly once.
 for k in range(number_of_pairs):
@@ -239,26 +227,15 @@ for t in teams:
         m += xsum(y[w][p][k] for w in weeks for k, (i, j) in enumerate(pairs) if t == i or t == j) <= 2
 
 
-# ============================================================
-# 7. HOME/AWAY LINKING CONSTRAINTS
-# ============================================================
-
-# If pair k is not selected in slot (w, p), then home[w][p][k] must be 0.
-# If pair k is selected, home[w][p][k] can be 0 or 1.
+# Home/Away Linking constraints
 for w in weeks:
     for p in periods:
         for k in range(number_of_pairs):
             m += home[w][p][k] <= y[w][p][k]
 
 
-# ============================================================
-# 8. SAFE SYMMETRY BREAKING
-# ============================================================
+# Safe simmetry breaking
 
-# Fix the first week:
-# period 0 -> team 0 vs team 1
-# period 1 -> team 2 vs team 3
-# etc.
 for p in periods:
     fixed_home_team = 2 * p
     fixed_away_team = 2 * p + 1
@@ -270,11 +247,6 @@ for p in periods:
     m += home[0][p][fixed_pair_index] == 1
 
 
-# Fix team 0's opponent by week:
-# week 0 -> team 0 plays team 1
-# week 1 -> team 0 plays team 2
-# ...
-# week n-2 -> team 0 plays team n-1
 for w in weeks:
     opponent = w + 1
 
@@ -299,9 +271,7 @@ for p in periods:
 
 
 
-# ============================================================
-# 9. DECISION MODE VS OPTIMIZATION MODE
-# ============================================================
+# Decision mode vs optimization mode
 
 if args.optimized:
     solution_name = "mip_cbc_optimization"
@@ -354,9 +324,7 @@ else:
     m.objective = xsum([])
 
 
-# ============================================================
-# 10. SOLVE
-# ============================================================
+# Solve
 
 solve_start = time.perf_counter()
 status = m.optimize(max_seconds=SOLVER_TIME_LIMIT)
@@ -369,9 +337,7 @@ runtime_floor = int(total_runtime)
 has_solution = m.num_solutions > 0
 
 
-# ============================================================
-# 11. BUILD SOLUTION MATRIX
-# ============================================================
+# Solution matrix
 
 def extract_schedule():
     schedule = []
@@ -396,9 +362,7 @@ def extract_schedule():
     return schedule
 
 
-# ============================================================
-# 12. INTERPRET STATUS AND EXPORT
-# ============================================================
+# Interpret status and export
 
 data = load_json_file(output_file)
 
@@ -446,11 +410,6 @@ data = add_solution_json(
 )
 
 save_json_file(output_file, data)
-
-
-# ============================================================
-# 13. CONSOLE OUTPUT
-# ============================================================
 
 print("======================================")
 print("MIP finished")
