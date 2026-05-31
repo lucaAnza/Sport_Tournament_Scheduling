@@ -117,7 +117,7 @@ n = args.n
 W = n - 1
 P = n // 2
 TIME_LIMIT = 300
-SOLVER_TIME_LIMIT = 299
+SAFETY_BUFFER = 1
 
 output_dir = get_output_directory(args)
 output_file = output_dir / f"{n}.json"
@@ -236,6 +236,10 @@ for w in weeks:
 
 # Safe simmetry breaking
 
+# Fix the first week:
+# period 0 -> team 0 vs team 1
+# period 1 -> team 2 vs team 3
+# etc.
 for p in periods:
     fixed_home_team = 2 * p
     fixed_away_team = 2 * p + 1
@@ -247,6 +251,11 @@ for p in periods:
     m += home[0][p][fixed_pair_index] == 1
 
 
+# Fix team 0's opponent by week:
+# week 0 -> team 0 plays team 1
+# week 1 -> team 0 plays team 2
+# ...
+# week n-2 -> team 0 plays team n-1
 for w in weeks:
     opponent = w + 1
 
@@ -325,15 +334,27 @@ else:
 
 
 # Solve
+build_end = time.perf_counter()
 
-solve_start = time.perf_counter()
-status = m.optimize(max_seconds=SOLVER_TIME_LIMIT)
-solve_end = time.perf_counter()
+build_end = time.perf_counter()
+build_runtime = build_end - model_build_start
+remaining_solver_time = TIME_LIMIT - build_runtime - SAFETY_BUFFER
 
-# Reports total runtime, including model construction time.
+if remaining_solver_time <= 0:
+    # Model construction already consumed the available time.
+    # Do not call the solver.
+    status = None
+    solve_start = None
+    solve_end = time.perf_counter()
+else:
+    solve_start = time.perf_counter()
+    status = m.optimize(max_seconds=remaining_solver_time)
+    solve_end = time.perf_counter()
+
+# Total runtime includes model construction + solving.
 total_runtime = solve_end - model_build_start
 runtime_floor = int(total_runtime)
-
+timed_out = runtime_floor >= TIME_LIMIT
 has_solution = m.num_solutions > 0
 
 
@@ -366,38 +387,41 @@ def extract_schedule():
 
 data = load_json_file(output_file)
 
-solved_runtime_to_export = min(runtime_floor, TIME_LIMIT - 1)
-
 if args.optimized:
-    optimal = status == OptimizationStatus.OPTIMAL
+    # Optimization version:
+    # optimal = true only if CBC proved optimality within the total time budget.
+    solved_to_optimality = (
+        status == OptimizationStatus.OPTIMAL
+    ) if status is not None else False
 
     if has_solution:
         sol_to_export = extract_schedule()
-        obj_to_export = int(round(m.objective_value))
 
-        if optimal:
-            runtime_to_export = solved_runtime_to_export
+        if m.objective_value is not None:
+            obj_to_export = int(round(m.objective_value))
         else:
-            runtime_to_export = TIME_LIMIT
-
+            obj_to_export = None
     else:
         sol_to_export = []
         obj_to_export = None
-        optimal = False
-        runtime_to_export = TIME_LIMIT
+
+    optimal = solved_to_optimality and not timed_out
 
 else:
+
     if has_solution:
         sol_to_export = extract_schedule()
-        obj_to_export = None
-        optimal = True
-        runtime_to_export = solved_runtime_to_export
-
     else:
         sol_to_export = []
-        obj_to_export = None
-        optimal = False
-        runtime_to_export = TIME_LIMIT
+
+    obj_to_export = None
+    optimal = has_solution and not timed_out
+
+
+if optimal:
+    runtime_to_export = runtime_floor
+else:
+    runtime_to_export = TIME_LIMIT
 
 
 data = add_solution_json(
@@ -419,8 +443,38 @@ print(f"Mode: {'optimization' if args.optimized else 'decision'}")
 print(f"Solver: CBC")
 print(f"Status: {status}")
 print(f"Solutions found: {m.num_solutions}")
-print(f"Runtime floor: {runtime_floor}")
-print(f"Exported time: {runtime_to_export}")
+print("--------------------------------------")
+print("Timing")
+print("--------------------------------------")
+print(f"Model build runtime: {build_runtime:.3f}s")
+print(f"Actual total runtime: {total_runtime:.3f}s")
+print(f"Actual total runtime floor: {runtime_floor}")
+print(f"Timed out by total 300s limit: {timed_out}")
+print(f"JSON/project time: {runtime_to_export}")
+print("--------------------------------------")
+print("Experimental report values")
+print("--------------------------------------")
+print(f"Approach name: {solution_name}")
+
+if optimal:
+    report_time = runtime_to_export
+else:
+    report_time = "N/A"
+
+if args.optimized:
+    print(f"Optimization optimal within time limit: {optimal}")
+    print(f"Time for report table: {report_time}")
+    print(f"JSON/project time: {runtime_to_export}")
+    print(f"Best objective / solution quality for report: {obj_to_export}")
+else:
+    print(f"Decision solved within time limit: {optimal}")
+    print(f"Time for report table: {report_time}")
+    print(f"JSON/project time: {runtime_to_export}")
+    print("Objective for report: None")
+
+print("--------------------------------------")
+print("JSON export")
+print("--------------------------------------")
 print(f"Optimal exported: {optimal}")
 print(f"Objective exported: {obj_to_export}")
 print(f"Output file: {output_file}")
