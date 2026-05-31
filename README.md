@@ -59,6 +59,9 @@ This repository provides an implementation for solving the Sports Tournament Sch
 3. Open the **Bash Terminal** and Run the command:
 
    ```bash
+   # Make the script executable
+   chmod +x start.sh
+   # Run the script
    bash start.sh
    ```
 4. Use the script menu as you prefer.

@@ -1,0 +1,14 @@
+{
+  "mip_cbc_decision": {
+    "time": 300,
+    "optimal": false,
+    "obj": null,
+    "sol": []
+  },
+  "mip_cbc_optimization": {
+    "time": 300,
+    "optimal": false,
+    "obj": null,
+    "sol": []
+  }
+}

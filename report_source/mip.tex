@@ -172,7 +172,8 @@ For optimization runs that do not prove optimality within the time limit, the
 objective value, when available, reports the best solution quality found by the
 solver before timeout.
 
-\paragraph{Experimental results.}
+\subsection{Experimental results.}
+
 
 \begin{table}[H]
 \centering
@@ -184,12 +185,17 @@ solver before timeout.
 $n$ & Solved & Time (s)
 & Optimal & Time (s) & Obj. \\
 \hline
-2  & Yes & 0   & Yes & 0   & 2  \\
+2  & Yes   & 0   & Yes   & 0   & 2   \\
 4  & UNSAT & N/A & UNSAT & N/A & N/A \\
-6  & Yes & 0   & Yes & 0   & 6  \\
-8  & Yes & 0   & Yes & 0   & 8  \\
-10 & Yes & 6   & Yes & 13  & 10 \\
-12 & Yes & 87  & Yes & 270 & 12 \\
+6  & Yes   & 0   & Yes   & 0   & 6   \\
+8  & Yes   & 0   & Yes   & 0   & 8   \\
+10 & Yes   & 7   & Yes   & 12  & 10  \\
+12 & Yes   & 89  & Yes   & 283 & 12  \\
+14 & No    & N/A & No    & N/A & N/A  \\
+16 & No    & N/A & No    & N/A & N/A \\
+18 & No    & N/A & No    & N/A & N/A \\
+20 & No    & N/A & No    & N/A & N/A \\
+22 & No    & N/A & No    & N/A & N/A \\
 \hline
 \end{tabular}
 \caption{Experimental results of the MIP model using CBC. For decision runs,
@@ -197,6 +203,8 @@ $n$ & Solved & Time (s)
 For optimization runs, ``Optimal'' indicates whether optimality was proved within
 300 seconds. The runtime is reported as N/A when no feasible or optimal solution
 is available for the corresponding setting. Objective values refer to the
-home/away imbalance minimized by the optimization model.}
+home/away imbalance minimized by the optimization model; when optimality is not
+proved but a feasible solution is found, the reported objective is the best
+solution quality found by the solver.}
 \label{tab:mip_results}
 \end{table}
