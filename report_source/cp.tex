@@ -1,0 +1,159 @@
+In this last section we will discuss how we implemented the Constraint programming model.
+
+With respect to the other two implementations, constraint programming admits a higher range of modeling possibilities and we tried to use them to model less sparse arrays, by avoiding the heavy use of boolean variables as we did in the other models.
+
+\subsection{Decision variables}
+Our decision variables are 3 different arrays:
+\begin{itemize}
+    \item $P_{t,w} \in \{1, \dots,P\}$ where 
+    \begin{center}
+    $ P_{t,w} = p \iff$ team $t$ plays in period $p$ in week $w$
+    \end{center}
+    \item Boolean array $H_{t,w}$ where 
+    \begin{center}
+    $ H_{t,w} = \verb|true| \iff$ team $t$ plays home in week $w$;
+    \end{center}
+    \item $OPP_{t_1,w}\in \{1,\dots,T\}$ where
+    \begin{center}
+    $OPP_{t_1,w} = t_2 \iff$ team $t_1$ plays against team $t_2$ in week $w$.
+    \end{center}
+\end{itemize}
+
+\subsection{Objective function}\label{CP obj function}
+For the objective function, we opted for a proxy of the one defined in the introduction.
+As discussed in section \ref{obj function MIP}, we used the \verb|max| function instead of \verb|abs| and the Home/Away imbalance was parametrized using just home games; but in this case, instead of summing up the imbalance for each team, we decided to look for the maximum value of imbalance among all teams and this turned out to be a good choice for performance improvement.
+The objective function in this section will be
+\[
+\max_{t \in \{1,\dots, n\}} \big| \; 
+\#\text{home\_games}(t) - \#\text{away\_games}(t) \; \big|.
+\]
+Such a function can be used instead of the original one since we are looking to the optimal value: $n$ for the original formulation, 1 for the $max$ objective function.
+Knowing a hypothetic value $k_{max}$ of the $max$ objective function, defines an upper bound on the values $k_{OG}$ of the original objective function, in fact
+\[
+k_{OG}\,\leq\, n\,k_{max} \qquad\forall\, n, k_{max}
+\]
+and in case of optimality we clearly get
+\[
+k_{max}=1 \implies k_{OG} \leq n \implies k_{OG}=n.
+\]
+
+
+\subsection{Constraints}
+
+
+\paragraph{Main constraints.}
+\begin{itemize}
+\item[(C1)] \textbf{Every pair of teams plays at most once.}  
+For this constraint we used the global constraint \verb|alldifferent| in the following way:
+\[
+\forall\, t \qquad \verb|alldifferent|(\,\{\,OPP_{t,w}\,|\, w = 1,\dots, n-1\,\}\,).
+\]
+
+\item[(C2)] \textbf{Each team plays exactly once per week.}  
+
+This constraint has not to be defined in this model because the array of variables $P_{t,w}$ admits just one value for every team in every week.
+
+\item[(C3)] \textbf{Each team appears at most twice in the same period over the tournament.}  
+\[
+\forall t, p \qquad \big|\{w\,| P_{t,w}=p\}\big| \leq 2
+\]
+\end{itemize}
+
+
+\paragraph{Implied constraints.}
+These constraints are crucial for the actual definition of the problem and the correct use of the decision variables
+\begin{itemize}
+\item[(C4)] \textbf{No team plays against itself:}
+\[
+\forall t , w \qquad OPP_{t,w} \neq t
+\]
+
+\item[(C5)] \textbf{Matches are symmetric:}
+\[
+\forall t , w \qquad OPP_{OPP_{t,w}\,, w} = t
+\]
+
+\item[(C6)] Since the weeks are interchangeable in our formulation (constraints and objective do not depend on the week index), we can break the week-permutation symmetry by fixing the opponent of team 1 in each week, without fixing the period.
+\[
+\forall w = 1,\dots,W \qquad \sum_{p = 1}^P Y_{w,p,(1,\,w+1)} = 1,
+\]
+i.e., in week \(w\) team \(1\) plays against team \(w+1\) in some period \(p\).
+
+\item[(C7)] In addition we break symmetry by fixing the main diagonal of the schedule matrix: in each diagonal slot \((w,p)=(p,p)\) (for the first \(P\) weeks), team \(1\) must be scheduled, without fixing the opponent. Formally:
+\[
+\forall p = 1,\dots,P \qquad
+\sum_{j=2}^{T} Y_{p,p,(1,j)} = 1.
+\]
+
+\end{itemize}
+
+
+\paragraph{Symmetry breaking}
+The problem has different symmetries and we tried to reduce the search space as much as possible, but maintaining some flexibility. Some of the subsequent constraints seem redundant, but we experimentally found out they were improving performance by helping propagation.
+The constraints are imposed especially on team 1 and week 1 for simplicity, but they could've been imposed on every other week and team (singularly) because of the week and team symmetries.
+\begin{itemize}
+    \item [(C9)] We fix each match in the first week by imposing three combined constraints:
+    \begin{itemize}
+        \item fixing match-ups:
+            \[
+            \forall p \qquad OPP_{2p-1, 1} = 2p \; \land \;OPP_{2p, 1} = 2p-1\;;
+            \]
+        \item fixing periods:
+            \[
+            \forall p \qquad P_{2p-1, 1} =  p \; \land \; P_{2p, 1}\;;\qquad\qquad\qquad
+            \]
+        \item fixing home/away teams:
+            \[
+            \forall p \qquad H_{2p-1, 1} =  \verb|true| \; \land \; H_{2p, 1} = \verb|false|\;.
+            \]
+    \end{itemize}
+
+    \item [(C10)] We impose an increasing order of the opponents for team 1 with the following constraint:
+    \[
+    \forall w = 1,\dots, n-2\qquad OPP_{1,w} < OPP_{1, w+1}.
+    \]
+
+    This constraint helps, along with (C9), to break the team symmetry of the problem by defining a total order on the teams' labels.
+    
+\end{itemize}
+
+
+\subsection{Validation}
+
+
+
+\paragraph{Experimental design.}
+All experiments for the constraint programming model were done using MiniZinc IDE and then implemented on the docker container. The model is runnable using Gecode solver, but with poor performance; we had some slight improvement when used with Optimization level O2 (two pass compilation).
+The model was instead optimized for the Chuffed solver (v 0.13.2), since we noticed it's efficiency already from the early stages of modeling.
+For reproducibility we fixed the random seed 42.
+
+The experiment were ran on a \textit{Windows 11} OS and the hardware platform was a laptop equipped with a \textit{AMD RYZEN 7 5800H} processor. No GPU acceleration was employed for CP solvers, which ran entirely on
+the CPU.  \\
+
+
+
+\paragraph{Experimental results.}
+The interpretation of the reported results and the meaning of the table entries follow a similar convention to the one described in Section~\ref{par:Experimental_result_SAT}, with the difference that we reported here the proxy objective function described in Section ~\ref{CP obj function}.
+\begin{table}[h]
+\centering
+\caption{Results with/without symmetry breaking}
+\label{tab:cp}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{$n$} & \textbf{Gecode+SB} & \textbf{Gecode--SB} & \textbf{Chuffed+SB} & \textbf{Chuffed--SB}\\
+\midrule
+2  & \textbf{1} & \textbf{1} & \textbf{1} & \textbf{1} \\
+4  &\texttt{UNSAT}&\texttt{UNSAT}&\texttt{UNSAT}&\texttt{UNSAT}\\
+6  & \textbf{1}  &\textbf{1}  & \textbf{1} & \textbf{1} \\
+8  & \textbf{1}  & \textbf{1} & \textbf{1} & \textbf{1} \\
+10 & \textbf{1}  &\texttt{N/A}& \textbf{1} & \textbf{1} \\
+12 & \texttt{N/A}&\texttt{N/A}& \textbf{1} & \textbf{1} \\
+14 & \texttt{N/A}&\texttt{N/A}& \textbf{1} & \textbf{1} \\
+16 & \texttt{N/A}&\texttt{N/A}& \textbf{1} & \textbf{1} \\
+18 & \texttt{N/A}&\texttt{N/A}& 13         & \textbf{1}     \\
+20 & \texttt{N/A}&\texttt{N/A}& 19         &\texttt{N/A}\\
+22 & \texttt{N/A}&\texttt{N/A}& \texttt{N/A} &\texttt{N/A}\\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,0 +1,40 @@
+This report addresses the solution of the well-known \emph{Sports Tournament Scheduling Problem (STS\cite{csplib_prob026})}.
+The focus is on presenting different modeling approaches and optimization techniques to handle the scheduling constraints and objectives.  
+To avoid repetition, later sections will refer back to this introduction whenever these shared components are required.
+
+\paragraph{Instance parameters}
+Let \(T=n\) be the number of teams (even), \(W=T-1\) the number of weeks, and \(P=T/2\) the number of periods (parallel timeslots) per week.
+Each solution is modeled referring to these three main variables.
+
+\begin{itemize}
+    \item Example1 : $ T = 6 \xrightarrow{} W = 4 $ and  $ P = 3 $
+    \item Example2 : $ T = 16 \xrightarrow{} W = 15 $ and  $ P = 8 $
+    \item Example3 : $ T = 5  \xrightarrow{} $ NOT VALID 
+\end{itemize}
+For the sake of brevity, whenever $w$, $p$ and $t$ (or eventually $t_1, t_2$) are used in formulas and the domains are omitted, they have to be implicit meant to be: 
+$w \in \{1,\dots, W\}$, $p \in \{1,\dots, P\}$ and $t \in \{1,\dots, T\}$.
+
+\paragraph{General constraints}
+The classical formulation of the STS problem requires that:
+\begin{enumerate}
+    \item every team plays with every other team exactly once;
+    \item every team plays exactly once per week;
+    \item every team plays at most twice in the same period over the whole tournament.
+\end{enumerate}
+
+\paragraph{Objective function}
+
+The main optimization criterion is to achieve a balanced schedule,
+in which every team plays approximately the same number of home and away
+games. 
+The objective is to minimize the overall imbalance:
+
+\[
+\sum_{t=1}^{T} \Big| \; 
+\#\text{home\_games}(t) - \#\text{away\_games}(t) \; \Big|
+\]
+
+Since $W$ is uneven by the definition of the problem, it is clear that no team could ever play the same number of home and away games and therefore the minimal value of $\big|  
+\#\text{home\_games}(t) - \#\text{away\_games}(t)  \big|$ for every team $t$ cannot be lower than 1.
+This implies that the objective function is (non-strictly) bounded below by the number of teams $T=n$, that we will find out that it corresponds to the optimal value we are looking for.
+
