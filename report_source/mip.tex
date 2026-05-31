@@ -16,7 +16,7 @@ Our decision variables are then two 3-dimensional tensors of \textbf{boolean} va
 Clearly these variables have to be linked one with the other, and that's why we will introduce some variable-linking constraint to our model.
 
 
-\subsection{Objective function}
+\subsection{Objective function}\label{obj_function exple}
 
 The objective function is used only in the optimization version of the MIP
 model. Its purpose is to balance the number of home and away games played by
@@ -29,22 +29,15 @@ weeks, the number of away games is:
 \[
 a_t = W - h_t.
 \]
-
-The home/away imbalance of team $t$ is therefore:
-
-\[
-|h_t - a_t|.
-\]
+The home/away imbalance of team $t$ is therefore:$\quad|h_t - a_t|.$
 
 Since absolute values cannot be used directly in a linear objective function, we
 introduce an auxiliary integer variable $b_t$ for each team $t$, representing
 the imbalance of that team. We impose the following linear constraints:
 
 \[
-b_t \geq h_t - a_t \qquad \forall t,
-\]
-
-\[
+b_t \geq h_t - a_t \,,
+\qquad\text{and} \qquad
 b_t \geq a_t - h_t \qquad \forall t.
 \]
 
@@ -82,9 +75,7 @@ This constraint can be translated in a linear inequality by imposing
 H_{w,p,(i,j)} \leq Y_{w,p,(i,j)}.
 \]
 
-\paragraph{Main constraints.}
-
-
+\paragraph{Main constraints}
 \textbf{(C1) Each pair of teams plays exactly once:}
 
 \[
@@ -117,7 +108,7 @@ Y_{w,p,(i,j)} \leq 2.
 \sum_{(i,j)\in L} Y_{w,p,(i,j)} = 1.
 \]
 
-With this model, we do not need to explicitly impose that exactly two teams
+We don't need to explicitly impose that exactly two teams
 play in each slot, since the possible games have already been represented as
 team pairs in $L$.
 
@@ -126,8 +117,8 @@ team pairs in $L$.
     
     \item[(C5)] We fix each match in the first week by imposing:
     \begin{align*}
-        \forall p =1,\dots,P\qquad   &Y_{1,p,(2p-1,\,2p)}=1\\
-        &H_{1,p,(2p-1,\,2p)}=1
+        \forall p =1,\dots,P\qquad   Y_{1,p,(2p-1,\,2p)}=1\quad \text{and} \quad
+        H_{1,p,(2p-1,\,2p)}=1
     \end{align*}
     
     \item[(C6)] Since the weeks are interchangeable in our formulation (constraints and objective do not depend on the week index), we can break the week-permutation symmetry by fixing the opponent of team 1 in each week, without fixing the period.
@@ -161,50 +152,37 @@ For each instance, two versions of the model were executed:
     version, where the objective is to minimize the total home/away imbalance.
 \end{itemize}
 
-The runtime is measured as total wall-clock time, including both model
-construction and solving time. A global time limit of 300 seconds is imposed.
-For solved instances, the reported time is the floor of the actual total runtime.
-If the decision version does not find a feasible schedule within the time limit,
-the runtime is reported as N/A. Similarly, for the optimization version, the
-runtime is reported only when optimality is proved within the time limit.
+%The runtime is measured as total wall-clock time, including both model
+%construction and solving time. A global time limit of 300 seconds is imposed.
+%For solved instances, the reported time is the floor of the actual total runtime.
+%If the decision version does not find a feasible schedule within the time limit,
+%the runtime is reported as N/A. Similarly, for the optimization version, the
+%runtime is reported only when optimality is proved within the time limit.
 
-For optimization runs that do not prove optimality within the time limit, the
-objective value, when available, reports the best solution quality found by the
-solver before timeout.
-
+%For optimization runs that do not prove optimality within the time limit, the
+%objective value, when available, reports the best solution quality found by the
+%solver before timeout.
+The interpretation of the reported results and the
+meaning of the table entries follow the same convention described
+in Section 2.4. For the decision column we just reported if we got a solution and the time it took to reach it.
 \subsection{Experimental results.}
 
 
 \begin{table}[H]
 \centering
-\begin{tabular}{c|cc|ccc}
+\begin{tabular}{c|c|c}
 \hline
-& \multicolumn{2}{c|}{Decision}
-& \multicolumn{3}{c}{Optimization} \\
-\cline{2-6}
-$n$ & Solved & Time (s)
-& Optimal & Time (s) & Obj. \\
+n & Decision & Optimization \\
 \hline
-2  & Yes   & 0   & Yes   & 0   & 2   \\
-4  & UNSAT & N/A & UNSAT & N/A & N/A \\
-6  & Yes   & 0   & Yes   & 0   & 6   \\
-8  & Yes   & 0   & Yes   & 0   & 8   \\
-10 & Yes   & 7   & Yes   & 12  & 10  \\
-12 & Yes   & 89  & Yes   & 283 & 12  \\
-14 & No    & N/A & No    & N/A & N/A  \\
-16 & No    & N/A & No    & N/A & N/A \\
-18 & No    & N/A & No    & N/A & N/A \\
-20 & No    & N/A & No    & N/A & N/A \\
-22 & No    & N/A & No    & N/A & N/A \\
+2  & Yes (0s)   &  \textbf{2} (0s) \\
+4  & \texttt{UNSAT} & \texttt{UNSAT} \\
+6  & Yes (0s)  & \textbf{6} (0s)  \\
+8  & Yes (0s)  & \textbf{8} (0s)   \\
+10 & Yes (7s)  & \textbf{10} (12s) \\
+12 & Yes (89s) & \textbf{12} (283s)  \\
+14 & No       & \texttt{N/A}  \\
 \hline
 \end{tabular}
-\caption{Experimental results of the MIP model using CBC. For decision runs,
-``Solved'' indicates whether a feasible schedule was found within 300 seconds.
-For optimization runs, ``Optimal'' indicates whether optimality was proved within
-300 seconds. The runtime is reported as N/A when no feasible or optimal solution
-is available for the corresponding setting. Objective values refer to the
-home/away imbalance minimized by the optimization model; when optimality is not
-proved but a feasible solution is found, the reported objective is the best
-solution quality found by the solver.}
+\caption{CBC results for the MIP model.}
 \label{tab:mip_results}
 \end{table}

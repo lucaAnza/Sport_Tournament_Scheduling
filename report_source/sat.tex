@@ -166,13 +166,10 @@ M_{t_1,t_2,w} \;\Rightarrow\; \big(HOME_{t_1,w} \oplus HOME_{t_2,w}\big).
 \item[(C6)] \textbf{Link between pair variables and period assignments.}
 \[
 \forall\, w,\, t_1<t_2\qquad
-M_{t_1,t_2,w} \;\Rightarrow\; \bigvee_{p=1}^{P}\big(P_{t_1,p,w}\land P_{t_2,p,w}\big),
+M_{t_1,t_2,w} \;\iff\; \bigvee_{p=1}^{P}\big(P_{t_1,p,w}\land P_{t_2,p,w}\big),
 \]
-\[
-\forall\, w,\,p,\, t_1<t_2\qquad
-\big(P_{t_1,p,w}\land P_{t_2,p,w}\big) \;\Rightarrow\; M_{t_1,t_2,w}.
-\]
-(Equivalently: \(M_{t_1,t_2,w}\) iff the two teams share some period \(p\) in week \(w\).)
+%\[\forall\, w,\,p,\, t_1<t_2\qquad\big(P_{t_1,p,w}\land P_{t_2,p,w}\big)\Rightarrow\; M_{t_1,t_2,w}.\]
+%(Equivalently: \(M_{t_1,t_2,w}\) iff the two teams share some period \(p\) in week \(w\).)
 \end{itemize}
 
 \paragraph{Precomputing tecnique.}
@@ -203,10 +200,10 @@ All experiments were conducted using the \texttt{Z3} solver for SAT and
 optimization (\cite{z3}). The implementation is provided in Python, and the solver is
 invoked through the \textbf{Z3 API}. 
 \\
-The experiments were tested on \emph{Linux} on a laptop equipped with a
-\textit{12th Gen Intel(R) Core(TM) i7-1280P} processor and an
-\textit{NVIDIA RTX-3060 GPU}. No GPU acceleration was employed for the SAT
-solving itself, which ran entirely on the CPU.
+%The experiments were tested on \emph{Linux} on a laptop equipped with a
+%\textit{12th Gen Intel(R) Core(TM) i7-1280P} processor and an
+%\textit{NVIDIA RTX-3060 GPU}. No GPU acceleration was employed for the SAT
+%solving itself, which ran entirely on the CPU.
 
 Reproducibility instructions, including installation steps and execution
 commands, are provided in the accompanying \texttt{README.md} file.
@@ -218,7 +215,7 @@ commands, are provided in the accompanying \texttt{README.md} file.
 
 The \textbf{following tables reports} the results of the SAT experiments. 
 Each row corresponds to a different value of $n$. 
-the value of the objective value obtained using different approach. If the instance is solved to optimality is in bold. In addition if the instance is proved to be
+On the tables are reported tthe value of the objective value obtained using different approach and in brackets the computation time for the best solution found. If the instance is solved to optimality is in bold. In addition if the instance is proved to be
 unsatisfiable, it is indicate as \texttt{UNSAT} and if no answer is obtained within the
 time limit of 300s are indicate it with \texttt{N/A}.
 Each modeling approach have is own table (Tab.~\ref{tab:results_sat_m1} and Tab.~\ref{tab:results_sat_m2}).  
@@ -226,7 +223,6 @@ Each modeling approach have is own table (Tab.~\ref{tab:results_sat_m1} and Tab.
 The \textbf{precomputation time} required to generate the round-robin pairs is not reported in the tables, as it is negligible: it remains below one second even for 
 $n\approx50$, and therefore has no practical impact on the overall computational performance.
 
-```latex
 % MODEL 1 and MODEL 2 - UPDATED TABLE
 \begin{table}[h]
 \centering
@@ -279,4 +275,3 @@ $n$ & Standard & Precomputing \\
 \label{tab:results_sat_m2}
 \end{minipage}
 \end{table}
-```
