@@ -1,0 +1,209 @@
+In this section we will discuss how we implemented a Mixed Integer Linear Program model able to solve the given Tournament Scheduling problem.
+
+The main obstacle in the implementation of linear programs is the fact that the objective function and every constraint have to be linear in our variables; therefore we transformed logic propositions and non-linear functions with linear inequalities, introducing, if needed, some auxiliary variable as for the implementation of the objective function.
+
+\subsection{Decision variables}
+Before defining the variables, we compute the list $L$ of the possible match-ups, without caring about the order of the $(i,j)$ team tuples (we impose $i<j$ for unicity).
+If $n=T$ is the number of teams, we have $|L|=\binom{n}{2} = \frac{n!}{2!(n-2)!}$, i.e. $\binom{n}{2}$ games to be played.
+
+
+Our decision variables are then two 3-dimensional tensors of \textbf{boolean} values $Y_{w,p,(i,j)}$ and $H_{w,p,(i,j)}$, where
+\begin{itemize}
+    \item $Y_{w,p,(i,j)} = 1 \iff$ teams $i$ and $j$ are playing one against the other in week $w$ in period $p$;
+    \item $H_{w,p,(i,j)} = 1 \iff$ team $i$ (the team with lowest index since $\forall (i,j) \in L$, $i<j$) is playing home in week $w$ in period $p$.
+\end{itemize}
+
+Clearly these variables have to be linked one with the other, and that's why we will introduce some variable-linking constraint to our model.
+
+
+\subsection{Objective function}
+
+The objective function is used only in the optimization version of the MIP
+model. Its purpose is to balance the number of home and away games played by
+each team.
+
+For each team $t$, let $h_t$ be the number of home games played by team $t$.
+Since each team plays exactly one match per week and there are $W = n - 1$
+weeks, the number of away games is:
+
+\[
+a_t = W - h_t.
+\]
+
+The home/away imbalance of team $t$ is therefore:
+
+\[
+|h_t - a_t|.
+\]
+
+Since absolute values cannot be used directly in a linear objective function, we
+introduce an auxiliary integer variable $b_t$ for each team $t$, representing
+the imbalance of that team. We impose the following linear constraints:
+
+\[
+b_t \geq h_t - a_t \qquad \forall t,
+\]
+
+\[
+b_t \geq a_t - h_t \qquad \forall t.
+\]
+
+Since the objective minimizes the sum of the imbalance variables, each $b_t$
+will take the smallest value satisfying both inequalities, and therefore:
+
+\[
+b_t = |h_t - a_t|.
+\]
+
+The objective function of the optimization version is then:
+
+\[
+\min \sum_{t=1}^{n} b_t.
+\]
+
+In the decision version, no real objective function is optimized. A dummy
+constant objective is used only to run the feasibility model through the MIP
+solver.
+
+
+
+% ======= CONSTRAINTS MIP =======
+\subsection{Constraints}
+
+\paragraph{Variable linking constraint}
+As already mentioned, we have to link the variables and this has to be done by adding linear inequalities to our linear program.
+
+The only constraint we have to add is the one that ensures that $H_{w,p,(i,j)}\neq1$ if teams $i$ and $j$ do not play against in week $w$ in period $p$, i.e.
+\[
+Y_{w,p,(i,j)} = 0\implies H_{w,p,(i,j)}\neq1.
+\]
+This constraint can be translated in a linear inequality by imposing
+\[
+H_{w,p,(i,j)} \leq Y_{w,p,(i,j)}.
+\]
+
+\paragraph{Main constraints.}
+
+
+\textbf{(C1) Each pair of teams plays exactly once:}
+
+\[
+\forall (i,j) \in L \qquad
+\sum_{w=1}^{W} \sum_{p=1}^{P} Y_{w,p,(i,j)} = 1.
+\]
+
+\textbf{(C2) Each team plays exactly once per week:}
+
+\[
+\forall t,w \qquad
+\sum_{p=1}^{P}
+\sum_{\substack{(i,j)\in L \\ i=t \vee j=t}}
+Y_{w,p,(i,j)} = 1.
+\]
+
+\textbf{(C3) Each team plays at most twice in the same period:}
+
+\[
+\forall t,p \qquad
+\sum_{w=1}^{W}
+\sum_{\substack{(i,j)\in L \\ i=t \vee j=t}}
+Y_{w,p,(i,j)} \leq 2.
+\]
+
+\textbf{(C4) Each slot $(w,p)$ hosts exactly one game:}
+
+\[
+\forall w,p \qquad
+\sum_{(i,j)\in L} Y_{w,p,(i,j)} = 1.
+\]
+
+With this model, we do not need to explicitly impose that exactly two teams
+play in each slot, since the possible games have already been represented as
+team pairs in $L$.
+
+\paragraph{Symmetry breaking constraints}
+\begin{itemize}
+    
+    \item[(C5)] We fix each match in the first week by imposing:
+    \begin{align*}
+        \forall p =1,\dots,P\qquad   &Y_{1,p,(2p-1,\,2p)}=1\\
+        &H_{1,p,(2p-1,\,2p)}=1
+    \end{align*}
+    
+    \item[(C6)] Since the weeks are interchangeable in our formulation (constraints and objective do not depend on the week index), we can break the week-permutation symmetry by fixing the opponent of team 1 in each week, without fixing the period.
+    \[
+    \forall w = 1,\dots,W \qquad \sum_{p = 1}^P Y_{w,p,(1,\,w+1)} = 1,
+    \]
+    i.e., in week \(w\) team \(1\) plays against team \(w+1\) in some period \(p\).
+
+    \item[(C7)] In addition we break symmetry by fixing the main diagonal of the schedule matrix: in each diagonal slot \((w,p)=(p,p)\) (for the first \(P\) weeks), team \(1\) must be scheduled, without fixing the opponent. Formally:
+    \[
+    \forall p = 1,\dots,P \qquad
+    \sum_{j=2}^{T} Y_{p,p,(1,j)} = 1.
+    \]
+    
+\end{itemize}
+
+% ======= VALIDATION MIP =======
+\subsection{Validation}
+
+\paragraph{Experimental setup.}
+All experiments for the MIP formulation were conducted using the CBC solver
+through the \texttt{python-mip} library~\cite{pythonmip}. The implementation is
+provided in Python, and the solver is invoked through the \texttt{python-mip}
+API.
+
+For each instance, two versions of the model were executed:
+\begin{itemize}
+    \item \texttt{mip\_cbc\_decision}, corresponding to the decision version of
+    the problem, where the goal is to find any feasible schedule;
+    \item \texttt{mip\_cbc\_optimization}, corresponding to the optimization
+    version, where the objective is to minimize the total home/away imbalance.
+\end{itemize}
+
+The runtime is measured as total wall-clock time, including both model
+construction and solving time. A global time limit of 300 seconds is imposed.
+For solved instances, the reported time is the floor of the actual total runtime.
+If the decision version does not find a feasible schedule within the time limit,
+the runtime is reported as N/A. Similarly, for the optimization version, the
+runtime is reported only when optimality is proved within the time limit.
+
+For optimization runs that do not prove optimality within the time limit, the
+objective value, when available, reports the best solution quality found by the
+solver before timeout.
+
+\subsection{Experimental results.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|cc|ccc}
+\hline
+& \multicolumn{2}{c|}{Decision}
+& \multicolumn{3}{c}{Optimization} \\
+\cline{2-6}
+$n$ & Solved & Time (s)
+& Optimal & Time (s) & Obj. \\
+\hline
+2  & Yes   & 0   & Yes   & 0   & 2   \\
+4  & UNSAT & N/A & UNSAT & N/A & N/A \\
+6  & Yes   & 0   & Yes   & 0   & 6   \\
+8  & Yes   & 0   & Yes   & 0   & 8   \\
+10 & Yes   & 7   & Yes   & 12  & 10  \\
+12 & Yes   & 89  & Yes   & 283 & 12  \\
+14 & No    & N/A & No    & N/A & N/A  \\
+16 & No    & N/A & No    & N/A & N/A \\
+18 & No    & N/A & No    & N/A & N/A \\
+20 & No    & N/A & No    & N/A & N/A \\
+22 & No    & N/A & No    & N/A & N/A \\
+\hline
+\end{tabular}
+\caption{Experimental results of the MIP model using CBC. For decision runs,
+``Solved'' indicates whether a feasible schedule was found within 300 seconds.
+For optimization runs, ``Optimal'' indicates whether optimality was proved within
+300 seconds. The runtime is reported as N/A when no feasible or optimal solution
+is available for the corresponding setting. Objective values refer to the
+home/away imbalance minimized by the optimization model; when optimality is not
+proved but a feasible solution is found, the reported objective is the best
+solution quality found by the solver.}
+\label{tab:mip_results}
+\end{table}

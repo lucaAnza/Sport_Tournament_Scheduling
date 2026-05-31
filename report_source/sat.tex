@@ -1,0 +1,282 @@
+The SAT solution was made using two different modeling approaches. Both are included in the report. 
+
+\vspace{1em}
+\textit{Model~1} was implemented using several alternative SAT encodings for the cardinality
+constraints introduced above. In particular, we considered the \textbf{Bitwise} encoding,
+the \textbf{Heule} encoding, the \textbf{Pairwise} encoding, and the \textbf{Sequential} encoding.
+Each encoding provides a different trade-off between the number of variables,
+the number of clauses, and the strength of constraint propagation.
+
+\vspace{1em}
+\textit{Model~2} extends the formulation of Model~1 by adding further constraints and auxiliary decision variables. In contrast to Model~1, the implementation adopts a single SAT encoding approach (e.g., pairwise-style cardinality constraints) and does not perform a systematic comparison across alternative encodings.  
+
+Moreover, the implementation can optionally enable a \textbf{precomputing} phase described in paragraph \ref{par:precomputing_sat}.
+
+
+
+
+
+\subsection{Decision variables}
+
+\subsubsection{Model - 1}
+
+The use of multiple encodings within the same model allows for a systematic
+comparison of their impact on solver performance, while keeping the underlying
+problem formulation fixed.
+
+\paragraph{Booleans}
+
+\begin{itemize}
+    \item  $ X_{t,h,p,w}\in\{0,1\} \quad\text{meaning team }t\text{ is scheduled with role }h\text{ in slot }(p,w). $
+\end{itemize}
+
+\subsubsection{Model - 2}
+
+\paragraph{Booleans}
+
+\begin{itemize}
+    \item  $ M_{t_1,t_2,w} \in \{0,1\} \quad\text{meaning teams $t_1$ and $t_2$ play against each other in week $w$}. $
+    \item $HOME_{t,w} \in \{0,1\} \quad\text{meaning team $t$ plays at home in week $w$ (away otherwise)}.$
+    \item $P_{t,p,w} \in \{0,1\} \quad\text{meaning team $t$ is assigned to period $p$ in week $w$}.$
+\end{itemize}
+
+
+\paragraph{Remarks.}
+
+Model--2 introduces explicit pair variables \(M_{t_1,t_2,w}\) to capture
+which two teams meet in a given week, home assignment variables
+\(HOME_{t,w}\) to distinguish roles, and period variables
+\(P_{t,p,w}\) to ensure consistency of scheduling.
+
+
+\subsection{Objective function}
+
+\subsubsection{Model - 1}
+
+We minimize total home/away imbalance across teams:
+\[
+%\min
+\;\; \sum_{t=1}^{T} \left| 
+\sum_{p=1}^{P}\sum_{w=1}^{W} \big( X_{t,0,p,w} - X_{t,1,p,w} \big)
+\right|.
+\]
+In the implementation with \texttt{Z3}, the optimization is performed by 
+\emph{iterative (binary) search} on a pseudo-Boolean bound \(z\). 
+At each step we introduce a constraint of the form 
+\(\sum_t \lvert \cdot \rvert \leq z\), encoded using cardinality 
+constraints, and solve for feasibility. If satisfiable, the bound 
+is tightened; otherwise the process stops at the last feasible value.
+
+\subsubsection{Model - 2 }
+
+As in Model--1, the optimization criterion is to balance the number of
+home and away games for each team. Formally:
+
+\[
+%\min 
+\sum_{t=1}^T \left| \sum_{w=1}^W HOME_{t,w}
+      - \Big(W - \sum_{w=1}^W HOME_{t,w}\Big) \right|.
+\]
+
+% ======= CONSTRAINT =======
+\subsection{Constraints}
+
+\subsubsection{Model - 1 }
+
+\paragraph{Main constraints.}
+
+\begin{itemize}
+\item[(C1)] \textbf{Every pair of teams plays at most once:}  
+%For each distinct pair of teams $t_1,t_2 \in \{1,\dots,T\}$:
+\[
+\forall\, t_1,t_2 \;\;\text{with}\;\;t_1\neq t_2\quad
+\sum_{p=1}^{P}\sum_{w=1}^{W}
+\Big( \bigvee_{h\in\{0,1\}} X_{t_1,h,p,w} \;\land\;
+       \bigvee_{h\in\{0,1\}} X_{t_2,h,p,w} \Big)
+\;\;\leq 1.
+\]
+
+\item[(C2)] \textbf{Each team plays exactly once per week:}  
+%For every team $t$ and week $w$:
+\[
+\forall \,t, w\;
+\sum_{h\in\{0,1\}}\sum_{p=1}^{P} X_{t,h,p,w} \;=\; 1.
+\]
+
+\item[(C3)] \textbf{Each team appears at most twice in the same period over the tournament:}  
+%For every team $t$ and period $p$:
+\[
+\forall\, t, p\;
+\sum_{h\in\{0,1\}}\sum_{w=1}^{W} X_{t,h,p,w} \;\leq\; 2.
+\]
+\end{itemize}
+
+\paragraph{Implied constraints.}
+
+\begin{itemize}
+\item[(C4)] \textbf{Each game slot has exactly one home and one away team:}  
+%For every period $p$ and week $w$:
+\[
+\forall\, p, w\quad
+\sum_{t=1}^{T} X_{t,1,p,w} = 1
+\quad\text{and}\quad
+\sum_{t=1}^{T} X_{t,0,p,w} = 1.
+\]
+\end{itemize}
+
+\subsubsection{Model - 2 }
+
+\paragraph{Main constraints.}
+
+\begin{itemize}
+\item[(C1)] \textbf{Each team plays with every other team only once;}
+\[
+\forall\, t_1<t_2\qquad
+\sum_{w=1}^{W} M_{t_1,t_2,w} \;=\; 1.
+\]
+
+\item[(C2)] \textbf{Each team plays exactly once per week}
+\[
+\forall\, t,\,w\qquad
+\sum_{p=1}^{P} P_{t,p,w} \;=\; 1.
+\]
+
+\item[(C3)] \textbf{Each team plays at most twice in the same period}
+\[
+\forall\, t,\,p\qquad
+\sum_{w=1}^{W} P_{t,p,w} \;\le\; 2.
+\]
+
+\item[(C4)] \textbf{Each slot \((p,w)\) hosts exactly two teams.}
+\[
+\forall\, p,\,w\qquad
+\sum_{t=1}^{T} P_{t,p,w} \;=\; 2.
+\]
+\end{itemize}
+
+\paragraph{Implied constraints.}
+
+\begin{itemize}
+\item[(C5)] \textbf{Home/away consistency when two teams meet in week \(w\).}
+\[
+\forall\, w,\, t_1<t_2\qquad
+M_{t_1,t_2,w} \;\Rightarrow\; \big(HOME_{t_1,w} \oplus HOME_{t_2,w}\big).
+\]
+
+\item[(C6)] \textbf{Link between pair variables and period assignments.}
+\[
+\forall\, w,\, t_1<t_2\qquad
+M_{t_1,t_2,w} \;\Rightarrow\; \bigvee_{p=1}^{P}\big(P_{t_1,p,w}\land P_{t_2,p,w}\big),
+\]
+\[
+\forall\, w,\,p,\, t_1<t_2\qquad
+\big(P_{t_1,p,w}\land P_{t_2,p,w}\big) \;\Rightarrow\; M_{t_1,t_2,w}.
+\]
+(Equivalently: \(M_{t_1,t_2,w}\) iff the two teams share some period \(p\) in week \(w\).)
+\end{itemize}
+
+\paragraph{Precomputing tecnique.}
+\label{par:precomputing_sat}
+
+\begin{itemize}
+\item[(P1)] \textbf{Precomputed round-robin pruning.}
+Let \(\mathcal{R}_w\subseteq\{\{t_1,t_2\}\mid t_1<t_2\}\) be the fixed set of pairs for week \(w\) produced by the round-robin generator. Then:
+\[
+\forall\, w,\, t_1<t_2\qquad
+M_{t_1,t_2,w} =
+\begin{cases}
+1, & \text{if }\{t_1,t_2\}\in \mathcal{R}_w,\\[4pt]
+0, & \text{otherwise.}
+\end{cases}
+\]
+\end{itemize}
+
+
+% ======= VALIDATION SAT =======
+
+\subsection{Validation}
+\label{sub:validation_sat}
+
+\paragraph{Experimental Setup} \mbox{}\\
+\\
+All experiments were conducted using the \texttt{Z3} solver for SAT and
+optimization (\cite{z3}). The implementation is provided in Python, and the solver is
+invoked through the \textbf{Z3 API}. 
+\\
+The experiments were tested on \emph{Linux} on a laptop equipped with a
+\textit{12th Gen Intel(R) Core(TM) i7-1280P} processor and an
+\textit{NVIDIA RTX-3060 GPU}. No GPU acceleration was employed for the SAT
+solving itself, which ran entirely on the CPU.
+
+Reproducibility instructions, including installation steps and execution
+commands, are provided in the accompanying \texttt{README.md} file.
+
+
+
+\paragraph{Experimental results} \mbox{}\\
+\label{par:Experimental_result_SAT}
+
+The \textbf{following tables reports} the results of the SAT experiments. 
+Each row corresponds to a different value of $n$. 
+the value of the objective value obtained using different approach. If the instance is solved to optimality is in bold. In addition if the instance is proved to be
+unsatisfiable, it is indicate as \texttt{UNSAT} and if no answer is obtained within the
+time limit of 300s are indicate it with \texttt{N/A}.
+Each modeling approach have is own table (Tab.~\ref{tab:results_sat_m1} and Tab.~\ref{tab:results_sat_m2}).  
+
+The \textbf{precomputation time} required to generate the round-robin pairs is not reported in the tables, as it is negligible: it remains below one second even for 
+$n\approx50$, and therefore has no practical impact on the overall computational performance.
+
+```latex
+% MODEL 1 and MODEL 2 - UPDATED TABLE
+\begin{table}[h]
+\centering
+\scriptsize
+
+\begin{minipage}[t]{0.55\textwidth}
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{c|c|c|c|c}
+\hline
+$n$ & Bitwise & Heule & Pairwise & Sequential \\
+\hline
+2   & \textbf{2} (0s)  & \textbf{2} (0s)  & \textbf{2} (0s)  & \textbf{2} (0s) \\
+4   & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) & \texttt{UNSAT} (0s) \\
+6   & \textbf{6} (0s)  & \textbf{6} (0s)  & \textbf{6} (0s)  & \textbf{6} (0s) \\
+8   & 14 (1s)          & 24 (1s)          & 18 (1s)          & 24 (0s) \\
+10  & 26 (6s)          & 36 (4s)          & 18 (7s)          & 20 (6s) \\
+12  & 30 (87s)         & 44 (13s)         & 36 (40s)         & 30 (151s) \\
+14  & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A} \\
+16  & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A}     & \texttt{N/A} \\
+\hline
+\end{tabular}
+\caption{Experimental results of Model 1.}
+\label{tab:results_sat_m1}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.42\textwidth}
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{c|c|c}
+\hline
+$n$ & Standard & Precomputing \\
+\hline
+2   & \textbf{2} (--)      & \textbf{2} (0s) \\
+4   & \texttt{UNSAT} (--)  & \texttt{UNSAT} (0s) \\
+6   & \textbf{6} (--)      & \textbf{6} (0s) \\
+8   & \textbf{8} (--)      & \textbf{8} (0s) \\
+10  & \textbf{10} (--)     & \textbf{10} (0s) \\
+12  & \textbf{12} (3s)     & \textbf{12} (1s) \\
+14  & \textbf{14} (83s)    & \textbf{14} (6s) \\
+16  & 46 (244s)            & \textbf{16} (10s) \\
+18  & \texttt{N/A}         & 44 (53s) \\
+20  & \texttt{N/A}         & 200 (272s) \\
+22  & \texttt{N/A}         & \texttt{N/A} \\
+\hline
+\end{tabular}
+\caption{Experimental results of Model 2.}
+\label{tab:results_sat_m2}
+\end{minipage}
+\end{table}
+```
