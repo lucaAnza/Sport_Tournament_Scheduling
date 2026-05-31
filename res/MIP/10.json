@@ -1,6 +1,6 @@
 {
   "mip_cbc_decision": {
-    "time": 7,
+    "time": 6,
     "optimal": true,
     "obj": null,
     "sol": [
@@ -197,7 +197,7 @@
     ]
   },
   "mip_cbc_optimization": {
-    "time": 12,
+    "time": 13,
     "optimal": true,
     "obj": 10,
     "sol": [
