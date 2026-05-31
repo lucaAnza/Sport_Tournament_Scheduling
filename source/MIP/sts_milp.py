@@ -341,8 +341,6 @@ build_runtime = build_end - model_build_start
 remaining_solver_time = TIME_LIMIT - build_runtime - SAFETY_BUFFER
 
 if remaining_solver_time <= 0:
-    # Model construction already consumed the available time.
-    # Do not call the solver.
     status = None
     solve_start = None
     solve_end = time.perf_counter()
