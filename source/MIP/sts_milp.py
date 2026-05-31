@@ -239,7 +239,7 @@ for w in weeks:
 # Fix the first week:
 # period 0 -> team 0 vs team 1
 # period 1 -> team 2 vs team 3
-# etc.
+# and so on...
 for p in periods:
     fixed_home_team = 2 * p
     fixed_away_team = 2 * p + 1
